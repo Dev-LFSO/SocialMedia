@@ -1,0 +1,1362 @@
+@charset 'UTF-8';
+
+/* ==========================================================================
+   FONTES
+   Display: Bricolage Grotesque -> títulos, marca, posts
+   Corpo:   Plus Jakarta Sans   -> texto, navegação, formulários
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+/* ==========================================================================
+   TOKENS
+   ========================================================================== */
+:root {
+    --bg: #F5F6F4;
+    --surface: #FFFFFF;
+    --surface-2: #EDEFEC;
+    --ink: #14161F;
+    --ink-soft: #4A4E5A;
+    --ink-faint: #8A8F9C;
+    --line: #E3E5E0;
+
+    --brand: #1C5A73;
+    --brand-dark: #123C4C;
+    --brand-soft: #E3EEF1;
+
+    --accent: #FF4B6E;
+    --accent-soft: #FFE3E9;
+
+    --success: #2F9E52;
+    --success-dark: #21793D;
+    --danger: #D63447;
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    --shadow-sm: 0 1px 2px rgba(20, 22, 31, 0.06);
+    --shadow-md: 0 10px 28px rgba(20, 22, 31, 0.10);
+
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+    --header-h: 64px;
+    --bottom-nav-h: 64px;
+}
+
+/* ==========================================================================
+   RESET & BASE
+   ========================================================================== */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+a {
+    color: inherit;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    width: 100%;
+    background: var(--ink);
+}
+
+.header-content {
+    height: var(--header-h);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.header-left,
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.header-right {
+    justify-content: flex-end;
+}
+
+.title {
+    cursor: default;
+    font-family: var(--font-display);
+    font-size: clamp(18px, 2.6vw, 26px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+}
+
+.title::selection {
+    background-color: var(--brand);
+}
+
+.greeting {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: default;
+}
+
+.home,
+.login,
+.logout,
+.register {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.home:hover,
+.login:hover,
+.logout:hover,
+.register:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.home:active,
+.login:active,
+.logout:active,
+.register:active {
+    transform: scale(0.94);
+}
+
+/* ==========================================================================
+   APP SHELL
+   ========================================================================== */
+main {
+    flex: 1;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) 300px;
+    gap: 24px;
+    align-items: start;
+}
+
+/* Pages without a trending column (e.g. news feed) use the remaining width */
+.content-wide {
+    grid-column: 2 / -1;
+}
+
+/* Login/register pages need a centered single column */
+main.auth-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - var(--header-h) - 60px);
+}
+
+/* ==========================================================================
+   SIDEBAR NAV (desktop rail / mobile bottom bar)
+   ========================================================================== */
+aside.nav-rail {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+}
+
+.list-actions {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--font-body);
+}
+
+.list-actions li {
+    list-style: none;
+}
+
+.list-actions a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 14px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--ink-soft);
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.list-actions i {
+    width: 18px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--ink-faint);
+    transition: color 0.2s ease;
+}
+
+.list-actions a:hover {
+    background-color: var(--brand-soft);
+    color: var(--brand-dark);
+}
+
+.list-actions a:hover i {
+    color: var(--brand);
+}
+
+.list-actions .nav-primary {
+    background-color: var(--brand);
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.list-actions .nav-primary i {
+    color: #ffffff;
+}
+
+.list-actions .nav-primary:hover {
+    color: #ffffff;
+    background-color: var(--brand-dark);
+}
+
+.list-actions .nav-primary:hover i{
+    color: #ffffff;
+}
+
+
+/* ==========================================================================
+   PANELS / CARDS (shared shape language)
+   ========================================================================== */
+.panel-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(20px, 2vw, 26px);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 16px;
+    cursor: default;
+}
+
+.empty-state {
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-md);
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 14px;
+}
+
+/* ==========================================================================
+   HOME — NEWS
+   ========================================================================== */
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px;
+}
+
+.news-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.news-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--brand);
+}
+
+.news-card__image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+    background: var(--surface-2);
+}
+
+.news-card__date {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--brand);
+    margin-bottom: 6px;
+}
+
+.news-card__title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--ink);
+    margin-bottom: 14px;
+}
+
+.news-card__link {
+    margin-top: auto;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand);
+    text-decoration: none;
+}
+
+.news-card__link::after {
+    content: '\2192';
+    transition: transform 0.2s ease;
+}
+
+.news-card__link:hover::after {
+    transform: translateX(3px);
+}
+
+/* ==========================================================================
+   POSTS FEED
+   ========================================================================== */
+.feed {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+
+.post-card {
+    scroll-margin-top: calc(var(--header-h) + 16px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.post-card:hover {
+    border-color: #d3d6d1;
+    box-shadow: var(--shadow-md);
+}
+
+.post-card__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    color: var(--ink);
+    margin-bottom: 4px;
+}
+
+.post-card__meta {
+    font-size: 13px;
+    color: var(--ink-faint);
+    margin-bottom: 14px;
+}
+
+.post-card__meta strong {
+    color: var(--ink-soft);
+    font-weight: 600;
+}
+
+.post-card__content {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    text-align: justify;
+    margin-bottom: 16px;
+}
+
+/* Like button */
+.like-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    padding: 6px 10px 6px 6px;
+    border-radius: 999px;
+    color: var(--ink-faint);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 14px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.like-btn:hover {
+    background-color: var(--accent-soft);
+    color: var(--accent);
+}
+
+.like-btn i {
+    font-size: 18px;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.like-btn.is-liked {
+    color: var(--accent);
+}
+
+.like-btn.is-liked i {
+    transform: scale(1.1);
+}
+
+.like-btn.pulse i {
+    animation: like-pop 0.4s ease;
+}
+
+/* Organização das ações do post */
+.post-card__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+/* Botão de Excluir */
+.btn-delete {
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-delete:hover {
+    color: var(--danger);
+    background-color: rgba(214, 52, 71, 0.1);
+}
+
+/* ==========================================================================
+   ESTILIZAÇÃO DE SELECT & INPUT DE ARQUIVO (FILE)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. SELECT (Caixa de Seleção)
+   -------------------------------------------------------------------------- */
+select,
+.inputs select,
+.auth-card form select {
+    width: 100%;
+    /* Remove a seta padrão do sistema operacional */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    
+    background-color: var(--bg);
+    /* Adiciona uma seta customizada via SVG */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234A4E5A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 11px 38px 11px 12px; /* Espaço na direita para não cobrir o texto com a seta */
+    font-size: 14.5px;
+    font-family: var(--font-body);
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+/* Hover e Foco no Select */
+select:hover,
+.inputs select:hover {
+    border-color: #d3d6d1;
+}
+
+select:focus,
+.inputs select:focus,
+.auth-card form select:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+    background-color: var(--surface);
+}
+
+/* Estilo das opções da lista (Dropdown) */
+select option {
+    background-color: var(--surface);
+    color: var(--ink);
+    padding: 10px;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. INPUT TYPE FILE (Upload de Foto de Perfil / Arquivos)
+   -------------------------------------------------------------------------- */
+input[type="file"],
+.inputs input[type="file"],
+.auth-card form input[type="file"] {
+    width: 100%;
+    font-size: 13.5px;
+    font-family: var(--font-body);
+    color: var(--ink-soft);
+    background: var(--bg);
+    border: 1px dashed var(--line); /* Borda tracejada moderna */
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Hover e Foco no campo de upload */
+input[type="file"]:hover,
+.inputs input[type="file"]:hover {
+    border-color: var(--brand);
+    background-color: var(--brand-soft);
+}
+
+input[type="file"]:focus,
+.inputs input[type="file"]:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+/* Estilização do Botão Interno ("Escolher arquivo") */
+input[type="file"]::file-selector-button,
+.inputs input[type="file"]::file-selector-button {
+    border: none;
+    background-color: var(--brand);
+    color: #ffffff;
+    padding: 6px 14px;
+    margin-right: 12px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+input[type="file"]::file-selector-button:hover,
+.inputs input[type="file"]::file-selector-button:hover {
+    background-color: var(--brand-dark);
+}
+
+input[type="file"]::file-selector-button:active,
+.inputs input[type="file"]::file-selector-button:active {
+    transform: scale(0.96);
+}
+
+/* Compatibilidade com navegadores WebKit mais antigos (Safari/Chrome legados) */
+input[type="file"]::-webkit-file-upload-button {
+    border: none;
+    background-color: var(--brand);
+    color: #ffffff;
+    padding: 6px 14px;
+    margin-right: 12px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+input[type="file"]::-webkit-file-upload-button:hover {
+    background-color: var(--brand-dark);
+}
+
+.inputs input[type="checkbox"][name*="clear"],
+.auth-card form input[type="checkbox"][name*="clear"] {
+    display: none;
+}
+
+/* Transforma o <label> do "Limpar" em um botão estilizado */
+.inputs label[for*="clear_id"],
+.auth-card form label[for*="clear_id"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin-top: 6px;
+    background-color: var(--accent-soft, #FFE3E9);
+    color: var(--danger, #D63447);
+    border: 1px solid rgba(214, 52, 71, 0.2);
+    border-radius: var(--radius-sm, 8px);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    width: fit-content;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+/* Ícone de lixeira antes do texto */
+.inputs label[for*="clear_id"]::before,
+.auth-card form label[for*="clear_id"]::before {
+    content: "\f2ed"; /* Ícone fa-trash-can do FontAwesome */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 13px;
+}
+
+/* Efeito Hover */
+.inputs label[for*="clear_id"]:hover,
+.auth-card form label[for*="clear_id"]:hover {
+    background-color: var(--danger, #D63447);
+    color: #ffffff;
+    border-color: var(--danger, #D63447);
+}
+
+/* Estado Marcado (Quando o usuário clica para remover) */
+.inputs input[type="checkbox"][name*="clear"]:checked + label[for*="clear_id"],
+.inputs input[type="checkbox"][name*="clear"]:checked + label {
+    background-color: var(--danger, #D63447);
+    color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(214, 52, 71, 0.2);
+}
+
+.inputs input[type="checkbox"][name*="clear"]:checked + label[for*="clear_id"]::after {
+    content: " (Marcado para remover)";
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+/* Estilização do link de visualização do arquivo atual */
+.inputs a[href*="profile_pictures"],
+.inputs a[href*="media"] {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand);
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.inputs a[href*="profile_pictures"]:hover,
+.inputs a[href*="media"]:hover {
+    text-decoration: underline;
+}
+
+@keyframes like-pop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.45); }
+    100% { transform: scale(1.1); }
+}
+
+/* ==========================================================================
+   TRENDING / MAIS CURTIDOS
+   ========================================================================== */
+.trending {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.trending-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trending-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.trending-item a {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    color: var(--ink);
+    line-height: 1.35;
+}
+
+.trending-item a:hover {
+    color: var(--brand);
+}
+
+.trending-item ul {
+    list-style: none;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.trending-item li {
+    font-size: 12.5px;
+    color: var(--ink-faint);
+}
+
+.trending-item li:first-child {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   FORMS (login / register)
+   ========================================================================== */
+.auth-card,
+.compose-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.compose-wrap {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.compose-card {
+    max-width: none;
+}
+
+.compose-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.link-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-faint);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.link-back:hover {
+    color: var(--brand);
+}
+
+.compose-card__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.button-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    background-color: transparent;
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.button-ghost:hover {
+    background-color: var(--surface-2);
+    border-color: #d3d6d1;
+}
+
+.auth-card .title,
+.compose-card .title {
+    color: var(--ink);
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    align-self: flex-start;
+}
+
+/* Estrutura do formulário dentro do card */
+.auth-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+/* Cada parágrafo gerado pelo {{ form.as_p }} */
+.auth-card form p {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+
+/* Labels dos campos */
+.auth-card form label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-top: 10px;
+}
+
+/* Campos de entrada (Inputs, Selects, Textareas) */
+.auth-card form input[type="text"],
+.auth-card form input[type="email"],
+.auth-card form input[type="password"],
+.auth-card form input[type="number"],
+.auth-card form input[type="url"],
+.auth-card form select,
+.auth-card form textarea {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 11px 12px;
+    font-size: 14.5px;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Estado de Foco */
+.auth-card form input:focus,
+.auth-card form select:focus,
+.auth-card form textarea:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+/* Textos de ajuda nativos do Django */
+.auth-card form .helptext {
+    font-size: 12px;
+    color: var(--ink-muted, #71717a);
+    margin-top: 2px;
+}
+
+/* Mensagens de erro de validação do Django */
+.auth-card form .errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 2px 0 0 0;
+    color: var(--danger, #ef4444);
+    font-size: 12px;
+}
+
+/* Botão de envio (Submit) */
+.auth-card form button[type="submit"],
+.auth-card form input[type="submit"] {
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    margin-top: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    background-color: var(--brand);
+    color: #ffffff;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.auth-card form button[type="submit"]:hover,
+.auth-card form input[type="submit"]:hover {
+    opacity: 0.9;
+    background: var(--brand-dark);
+}
+
+.auth-card form button[type="submit"]:active,
+.auth-card form input[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+.auth-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.auth-card ul li {
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Bullet personalizado com a cor primária do seu sistema */
+.auth-card ul li::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary, #0066cc);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.auth-card .helptext,
+.auth-card ul:not(.errorlist) {
+    display: none !important;
+}
+
+.auth-card .title,
+.compose-card .title {
+    color: var(--ink);
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    align-self: flex-start;
+}
+
+
+.inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.inputs label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-top: 10px;
+}
+
+.inputs label:first-child {
+    margin-top: 0;
+}
+
+.inputs input,
+.inputs textarea {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 11px 12px;
+    font-size: 14.5px;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inputs textarea {
+    resize: vertical;
+    min-height: 160px;
+    line-height: 1.6;
+}
+
+.inputs input::placeholder,
+.inputs textarea::placeholder {
+    color: var(--ink-faint);
+}
+
+.inputs input:focus,
+.inputs textarea:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.field-hint {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-align: right;
+    margin-top: -2px;
+}
+
+.field-hint.is-near-limit {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.error {
+    cursor: default;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--danger);
+    background: #FDECEE;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+}
+
+.button-submit {
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    margin-top: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    background-color: var(--brand);
+    color: #ffffff;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.button-submit:hover {
+    background-color: var(--brand-dark);
+}
+
+.button-submit:active {
+    transform: scale(0.98);
+}
+/* ==========================================================================
+   PERFIL & ABAS
+   ========================================================================== */
+.profile-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.profile-header-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.profile-avatar-wrapper {
+    flex-shrink: 0;
+}
+
+.profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--brand-soft);
+}
+
+.profile-avatar-placeholder {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    border: 1px solid var(--line);
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.profile-name {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+}
+
+.profile-username {
+    font-size: 14px;
+    color: var(--ink-faint);
+    font-weight: 600;
+}
+
+.profile-bio {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.profile-details-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-weight: 500;
+}
+
+/* NAVEGAÇÃO POR ABAS */
+.profile-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 2px;
+}
+
+.tab-button {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 10px 16px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink-faint);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    margin-bottom: -2px;
+}
+
+.tab-button:hover {
+    color: var(--brand);
+}
+
+.tab-button.active {
+    color: var(--brand);
+    border-bottom-color: var(--brand);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ESTILOS DO FORMULÁRIO DE EDIÇÃO */
+.profile-edit-card {
+    max-width: 100%;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-row-3 {
+    grid-template-columns: 2fr 1fr 2fr;
+}
+
+@media screen and (max-width: 640px) {
+    .profile-header-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile-details-pills {
+        justify-content: center;
+    }
+
+    .form-row,
+    .form-row-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+footer {
+    width: 100%;
+    padding: 16px;
+    background-color: var(--ink);
+    color: rgba(255, 255, 255, 0.55);
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    text-align: center;
+}
+
+/* ==========================================================================
+   SCROLLBAR
+   ========================================================================== */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c7cac4;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a9ada4;
+}
+
+/* ==========================================================================
+   ACESSIBILIDADE
+   ========================================================================== */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==========================================================================
+   RESPONSIVO
+   ========================================================================== */
+@media screen and (max-width: 1080px) {
+    main {
+        grid-template-columns: 220px minmax(0, 1fr);
+    }
+    .trending {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .greeting {
+        max-width: 90px;
+        font-size: 12.5px;
+    }
+
+    main {
+        display: block;
+        padding: 16px 16px calc(var(--bottom-nav-h) + 24px);
+    }
+
+    aside.nav-rail {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        z-index: 30;
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        padding: 6px 8px;
+        box-shadow: 0 -4px 16px rgba(20, 22, 31, 0.06);
+    }
+
+    .list-actions {
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 0;
+    }
+
+    .list-actions a {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 6px;
+        font-size: 10.5px;
+        text-align: center;
+    }
+
+    .list-actions a span {
+        line-height: 1;
+    }
+
+    .list-actions .nav-primary {
+        background-color: transparent;
+        color: var(--ink-soft);
+        margin-bottom: 0;
+    }
+
+    .list-actions .nav-primary i {
+        color: var(--brand);
+    }
+
+    .list-actions .nav-primary:hover {
+        background-color: var(--brand-soft);
+    }
+
+    .news-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    .auth-card {
+        max-width: 100%;
+    }
+}

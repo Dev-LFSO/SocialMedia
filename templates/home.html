@@ -1,0 +1,30 @@
+{% extends "main.html" %}
+
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="content-wide">
+        <h1 class="panel-title">Notícias</h1>
+
+        {% if news_list %}
+        <div class="news-grid">
+            {% for news in news_list %}
+            <article class="news-card">
+                {% if news.urlToImage %}
+                <img src="{{ news.urlToImage }}" alt="" class="news-card__image">
+                {% endif %}
+                <p class="news-card__date">{{ news.publishedAt }}</p>
+                <p class="news-card__title">{{ news.title }}</p>
+                <a href="{{ news.url }}" class="news-card__link" target="_blank" rel="noopener">Ler mais</a>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Nenhuma notícia disponível no momento.</p>
+        </div>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

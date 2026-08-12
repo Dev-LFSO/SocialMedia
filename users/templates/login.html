@@ -1,0 +1,26 @@
+{% extends "main.html" %}
+
+{% block content %}
+<main class="auth-main">
+    <form method="post" class="auth-card">
+        {% csrf_token %}
+        <h1 class="title">Entrar</h1>
+
+        {% if error %}
+        <div class="error">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+
+        <div class="inputs">
+            <label for="email">Email</label>
+            <input type="text" id="email" class="input-email" name="email" autocomplete="off" placeholder="email@gmail.com" required value="{{ email }}">
+
+            <label for="password">Senha</label>
+            <input type="password" id="password" class="input-password" name="password" autocomplete="off" required>
+
+            <button type="submit" class="button-submit">Entrar</button>
+        </div>
+    </form>
+</main>
+{% endblock %}

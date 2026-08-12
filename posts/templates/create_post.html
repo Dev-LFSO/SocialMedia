@@ -1,0 +1,74 @@
+{% extends "main.html" %}
+
+{% block title %}Novo post - Social Media{% endblock %}
+
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="content-wide">
+        <div class="compose-wrap">
+            <form method="post" class="compose-card">
+                {% csrf_token %}
+
+                <div class="compose-card__header">
+                    <h1 class="title">Criar post</h1>
+                    <a href="{% url "posts:all_posts" %}" class="link-back">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Voltar para o feed</span>
+                    </a>
+                </div>
+
+                {% if error %}
+                <div class="error">
+                    <p>{{ error }}</p>
+                </div>
+                {% endif %}
+
+                <div class="inputs">
+                    <label for="title">Título</label>
+                    <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        maxlength="200"
+                        placeholder="Do que você quer falar?"
+                        autocomplete="off"
+                        required>
+                    <span class="field-hint" id="title-counter">0/200</span>
+
+                    <label for="content">Conteúdo</label>
+                    <textarea
+                        id="content"
+                        name="content"
+                        rows="8"
+                        placeholder="Escreva o que estiver pensando..."
+                        required></textarea>
+                </div>
+
+                <div class="compose-card__actions">
+                    <a href="{% url "posts:all_posts" %}" class="button-ghost">Cancelar</a>
+                    <button type="submit" class="button-submit">Publicar</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</main>
+
+<script>
+    (function () {
+        var titleInput = document.getElementById('title');
+        var counter = document.getElementById('title-counter');
+        var limit = titleInput.getAttribute('maxlength');
+
+        function updateCounter() {
+            var length = titleInput.value.length;
+            counter.textContent = length + '/' + limit;
+            counter.classList.toggle('is-near-limit', length >= limit - 20);
+        }
+
+        titleInput.addEventListener('input', updateCounter);
+        updateCounter();
+    })();
+</script>
+{% endblock %}

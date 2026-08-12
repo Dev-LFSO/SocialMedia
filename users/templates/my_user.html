@@ -1,0 +1,242 @@
+{% extends "main.html" %}
+{% load static %}
+
+{% block title %}Meu Perfil | Social Media{% endblock %}
+
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="content-wide profile-container">
+        <!-- CARD DE CABEÇALHO DO PERFIL -->
+        <div class="profile-header-card">
+            <div class="profile-avatar-wrapper">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="Foto de {{ user.name }}" class="profile-avatar">
+                {% else %}
+                    <div class="profile-avatar-placeholder">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="profile-info">
+                <h1 class="profile-name">{{ user.name|default:user.username }}</h1>
+                <p class="profile-username">@{{ user.username }}</p>
+                
+                {% if user.bio %}
+                    <p class="profile-bio">{{ user.bio }}</p>
+                {% endif %}
+
+                <div class="profile-details-pills">
+                    {% if user.city or user.state %}
+                        <span class="pill"><i class="fa-solid fa-location-dot"></i> {{ user.city }}{% if user.city and user.state %}, {% endif %}{{ user.get_state_display|default:user.state }}</span>
+                    {% endif %}
+                    {% if user.country %}
+                        <span class="pill"><i class="fa-solid fa-globe"></i> {{ user.country }}</span>
+                    {% endif %}
+                    <span class="pill"><i class="fa-regular fa-envelope"></i> {{ user.email }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABAS DE NAVEGAÇÃO DO PERFIL -->
+        <div class="profile-tabs">
+            <button class="tab-button active" onclick="switchTab('posts-tab', this)">
+                <i class="fa-solid fa-newspaper"></i> Meus Posts ({{ user.posts.count|default:0 }})
+            </button>
+            <button class="tab-button" onclick="switchTab('edit-tab', this)">
+                <i class="fa-solid fa-pen-to-square"></i> Editar Perfil
+            </button>
+        </div>
+
+        <!-- CONTEÚDO DA ABA 1: MEUS POSTS -->
+        <div id="posts-tab" class="tab-content active">
+            {% if user.posts.all %}
+                <div class="feed">
+                    {% for post in user.posts.all %}
+                        <article class="post-card">
+                            <h2 class="post-card__title">{{ post.title }}</h2>
+                            <p class="post-card__meta">
+                                Publicado em {{ post.data_posted|date:"d/m/Y \à\s H:i" }}
+                            </p>
+                            <div class="post-card__content">
+                                {{ post.content }}
+                            </div>
+                            <div class="post-card__actions">
+                                <button
+                                    type="button"
+                                    class="like-btn{% if request.user in post.likes.all %} is-liked{% endif %}"
+                                    data-post-id="{{ post.id }}"
+                                    aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}"
+                                    aria-label="Curtir post">
+                                    <i class="fa-solid fa-heart"></i>
+                                    <span class="like-count">{{ post.likes.count }}</span>
+                                </button>
+                                <form action="{% url 'posts:delete_post' post.id %}" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este post?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-delete" title="Excluir post">
+                                        <i class="fa-solid fa-trash-can"></i> Excluir
+                                    </button>
+                                </form>
+                            </div>
+                            
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-newspaper fa-2x" style="margin-bottom: 12px;"></i>
+                    <p>Você ainda não fez nenhuma publicação.</p>
+                    <a href="{% url 'posts:create_post' %}" class="button-submit" style="display: inline-block; margin-top: 16px; text-decoration: none;">Criar meu primeiro post</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- CONTEÚDO DA ABA 2: EDITAR PERFIL -->
+        <div id="edit-tab" class="tab-content">
+            <div class="compose-card profile-edit-card">
+                <h2 class="title">Editar Informações Pessoais</h2>
+
+                <form method="POST" enctype="multipart/form-data" action="{% url 'users:my_user' %}">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="error">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <!-- FOTO DE PERFIL -->
+                    <div class="inputs">
+                        <label for="{{ form.profile_picture.id_for_label }}">Foto de Perfil</label>
+                        {{ form.profile_picture }}
+                        {% if form.profile_picture.errors %}
+                            <div class="error">{{ form.profile_picture.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- NOME E USERNAME -->
+                    <div class="form-row">
+                        <div class="inputs">
+                            <label for="{{ form.name.id_for_label }}">Nome Completo</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="error">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="inputs">
+                            <label for="{{ form.username.id_for_label }}">Nome de Usuário</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="error">{{ form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- EMAIL E CPF -->
+                    <div class="form-row">
+                        <div class="inputs">
+                            <label for="{{ form.email.id_for_label }}">E-mail</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="error">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="inputs">
+                            <label for="{{ form.cpf.id_for_label }}">CPF</label>
+                            {{ form.cpf }}
+                            {% if form.cpf.errors %}
+                                <div class="error">{{ form.cpf.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- BIO -->
+                    <div class="inputs">
+                        <label for="{{ form.bio.id_for_label }}">Biografia</label>
+                        {{ form.bio }}
+                        {% if form.bio.errors %}
+                            <div class="error">{{ form.bio.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- LOCALIZAÇÃO (PAÍS, ESTADO, CIDADE) -->
+                    <div class="form-row form-row-3">
+                        <div class="inputs">
+                            <label for="{{ form.city.id_for_label }}">Cidade</label>
+                            {{ form.city }}
+                            {% if form.city.errors %}
+                                <div class="error">{{ form.city.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="inputs">
+                            <label for="{{ form.state.id_for_label }}">UF</label>
+                            {{ form.state }}
+                            {% if form.state.errors %}
+                                <div class="error">{{ form.state.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="inputs">
+                            <label for="{{ form.country.id_for_label }}">País</label>
+                            {{ form.country }}
+                            {% if form.country.errors %}
+                                <div class="error">{{ form.country.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="button-submit">
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar Alterações
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.feed').on('click', '.like-btn', function (event) {
+            event.preventDefault();
+
+            var $btn = $(this);
+            var postId = $btn.data('post-id');
+
+            $.ajax({
+                url: '{% url "posts:like_post" post_id=0 %}'.replace('0', postId),
+                type: 'GET',
+                success: function (data) {
+                    $btn.toggleClass('is-liked', data.liked);
+                    $btn.attr('aria-pressed', data.liked);
+                    $btn.find('.like-count').text(data.liked_counts);
+
+                    $btn.addClass('pulse');
+                    setTimeout(function () {
+                        $btn.removeClass('pulse');
+                    }, 400);
+                }
+            });
+        });
+    });
+    function switchTab(tabId, element) {
+        // Oculta todas as abas
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Remove a classe 'active' de todos os botões
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Ativa a aba e o botão selecionados
+        document.getElementById(tabId).classList.add('active');
+        element.classList.add('active');
+    }
+</script>
+{% endblock %}
