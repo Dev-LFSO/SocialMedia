@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from posts.models import Post
+from django.contrib.auth import get_user_model
 from .forms import UserRegisterForm, ProfileUpdateForm
 
+User = get_user_model()
 
 # Create your views here.
 def register(request):
@@ -46,11 +49,21 @@ def logout_view(request):
     return redirect('home')
 
 @login_required(login_url='users:login')
+def get_user(request, username):
+    user = get_object_or_404(User, username=username)
+    user_posts = Post.objects.filter(user=user).order_by('-data_posted')
+    data = {
+        'profile_user': user,
+        'user_posts': user_posts,
+    }
+    return render(request, 'user.html', data)
+
+@login_required(login_url='users:login')
 def my_user(request):
     user = request.user
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
-        context = {
+        data = {
             'form': form,
             'user': user,
         }
@@ -58,11 +71,11 @@ def my_user(request):
             form.save()
             return redirect('users:my_user')
         else:
-            return render(request, 'my_user.html', context)
+            return render(request, 'my_user.html', data)
     else:
         form = ProfileUpdateForm(instance=request.user)
-        context = {
+        data = {
             'form': form,
             'user': user,
         }
-    return render(request, 'my_user.html', context)
+    return render(request, 'my_user.html', data)

@@ -20,7 +20,7 @@
             <p class="title">Social Media</p>
             <div class="header-right">
                 {% if user.is_authenticated %}
-                <span class="greeting">Olá, {{ user }}</span>
+                <span class="greeting">Olá, {{ user.username }}</span>
                 <a href="{% url "users:logout" %}" class="logout" aria-label="Sair" title="Sair">
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </a>

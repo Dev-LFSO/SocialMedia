@@ -8,9 +8,10 @@
         {% for post in posts %}
         <article class="post-card" id="{{ post.id }}">
             <h2 class="post-card__title">{{ post.title }}</h2>
-            <p class="post-card__meta">Publicado por <strong>{{ post.user }}</strong> · {{ post.data_posted|date:"H:i  m/d/Y" }}</p>
+            <p class="post-card__meta">Publicado por <a href="{% url 'users:get_user' post.user.username %}"><strong>{{ post.user.username }}</strong></a> · {{ post.data_posted|date:"H:i  d/m/Y" }}</p>
             <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
 
+            {% if user.is_authenticated %}
             <button
                 type="button"
                 class="like-btn{% if request.user in post.likes.all %} is-liked{% endif %}"
@@ -20,6 +21,7 @@
                 <i class="fa-solid fa-heart"></i>
                 <span class="like-count">{{ post.likes.count }}</span>
             </button>
+            {% endif %}
         </article>
         {% empty %}
         <div class="empty-state">
@@ -35,7 +37,7 @@
             <a href="#{{ post.id }}">{{ post.title }}</a>
             <ul>
                 <li>{{ post.likes.count }} curtidas</li>
-                <li>Publicado por {{ post.user }}</li>
+                <li>Publicado por <a href="{% url 'users:get_user' post.user.username %}">{{ post.user.username }}</a></li>
                 <li>{{ post.data_posted|date:"H:i  m/d/Y" }}</li>
             </ul>
         </div>
@@ -50,6 +52,16 @@
 <script src="{% static "js/script.js" %}"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+
+function incrementarTextoCurtidas(texto, value) {
+    var quantidadeAtual = parseInt(texto, 10);
+    
+    if (isNaN(quantidadeAtual)) return texto;
+
+    var novaQuantidade = quantidadeAtual + value;
+    return novaQuantidade + ' curtidas';
+}
+
 $(document).ready(function () {
     $('.feed').on('click', '.like-btn', function (event) {
         event.preventDefault();
@@ -59,8 +71,12 @@ $(document).ready(function () {
 
         $.ajax({
             url: '{% url "posts:like_post" post_id=0 %}'.replace('0', postId),
-            type: 'GET',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
             success: function (data) {
+
                 $btn.toggleClass('is-liked', data.liked);
                 $btn.attr('aria-pressed', data.liked);
                 $btn.find('.like-count').text(data.liked_counts);
@@ -69,6 +85,25 @@ $(document).ready(function () {
                 setTimeout(function () {
                     $btn.removeClass('pulse');
                 }, 400);
+
+                var $listaTrending = $('.trending-item');
+
+                $listaTrending.each(function (index, elemento) {
+                    var $link = $(elemento).find('a');
+                    var href = $link.attr('href');
+
+                    if (href && href.includes(postId)) {
+                        var $primeiraLi = $(elemento).find('ul li').first();
+                        var textoAtual = $primeiraLi.text();
+                        if (data.liked){
+                            var novoTexto = incrementarTextoCurtidas(textoAtual, 1);
+                        } else{
+                            var novoTexto = incrementarTextoCurtidas(textoAtual, -1);
+                        }
+                        $primeiraLi.text(novoTexto);
+                    }
+                });
+                
             }
         });
     });

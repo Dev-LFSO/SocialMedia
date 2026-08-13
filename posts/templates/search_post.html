@@ -1,0 +1,109 @@
+{% extends "main.html" %}
+{% load static %}
+
+{% block title %}Buscar Posts - Social Media{% endblock %}
+
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="content-wide">
+        <!-- CARD DE BUSCA -->
+        <div class="compose-card" style="max-width: 100%; margin-bottom: 24px; position: sticky; top: calc(var(--header-h) + 16px); z-index: 20;">
+            <div class="compose-card__header">
+                <h1 class="title"><i class="fa-solid fa-magnifying-glass"></i> Pesquisar Publicações</h1>
+            </div>
+
+            <form method="GET" action="{% url 'posts:search_post' %}">
+                <div class="inputs" style="flex-direction: row; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input 
+                        type="text" 
+                        name="q" 
+                        value="{{ query|default:'' }}" 
+                        placeholder="Digite conteúdo, título, autor..." 
+                        style="flex: 1; min-width: 240px;">
+                    <button type="submit" class="button-submit" style="margin-top: 0; white-space: nowrap;">
+                        <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- RESUMO DOS RESULTADOS -->
+        {% if query %}
+            <p class="post-card__meta" style="margin-bottom: 16px; font-size: 15px;">
+                Resultados para: <strong>"{{ query }}"</strong> 
+                {% if posts %}
+                    ({{ posts|length }} encontrado{{ posts|length|pluralize:"s" }})
+                {% endif %}
+            </p>
+        {% endif %}
+
+        <!-- FEED DE RESULTADOS DA BUSCA -->
+        <section class="feed">
+            {% for post in posts %}
+            <article class="post-card" id="{{ post.id }}">
+                <h2 class="post-card__title">{{ post.title }}</h2>
+                <p class="post-card__meta">
+                    Publicado por <a href="{% url 'users:get_user' post.user.username %}"><strong>{{ post.user.username }}</strong></a>· {{ post.data_posted|date:"H:i  d/m/Y" }}
+                </p>
+                <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
+                
+                {% if user.is_authenticated %}
+                <div class="post-card__actions">
+                    <button
+                        type="button"
+                        class="like-btn{% if request.user in post.likes.all %} is-liked{% endif %}"
+                        data-post-id="{{ post.id }}"
+                        aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}"
+                        aria-label="Curtir post">
+                        <i class="fa-solid fa-heart"></i>
+                        <span class="like-count">{{ post.likes.count }}</span>
+                    </button>
+                </div>
+                {% endif %}
+            </article>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fa-solid fa-magnifying-glass fa-2x" style="margin-bottom: 12px; color: var(--ink-faint);"></i>
+                {% if query %}
+                    <p>Nenhum post foi encontrado para "<strong>{{ query }}</strong>". Tente buscar por outros termos.</p>
+                {% else %}
+                    <p>Digite um termo no campo acima para realizar uma pesquisa.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </section>
+    </section>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+$(document).ready(function () {
+    $('.feed').on('click', '.like-btn', function (event) {
+        event.preventDefault();
+
+        var $btn = $(this);
+        var postId = $btn.data('post-id');
+
+        $.ajax({
+            url: '{% url "posts:like_post" post_id=0 %}'.replace('0', postId),
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function (data) {
+                $btn.toggleClass('is-liked', data.liked);
+                $btn.attr('aria-pressed', data.liked);
+                $btn.find('.like-count').text(data.liked_counts);
+
+                $btn.addClass('pulse');
+                setTimeout(function () {
+                    $btn.removeClass('pulse');
+                }, 400);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

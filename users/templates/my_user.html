@@ -209,16 +209,14 @@
 
             $.ajax({
                 url: '{% url "posts:like_post" post_id=0 %}'.replace('0', postId),
-                type: 'GET',
+                type: 'POST', // Mudado de GET para POST
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
                 success: function (data) {
                     $btn.toggleClass('is-liked', data.liked);
                     $btn.attr('aria-pressed', data.liked);
                     $btn.find('.like-count').text(data.liked_counts);
-
-                    $btn.addClass('pulse');
-                    setTimeout(function () {
-                        $btn.removeClass('pulse');
-                    }, 400);
                 }
             });
         });

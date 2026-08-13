@@ -1,0 +1,155 @@
+{% extends "main.html" %}
+{% load static %}
+
+{% block title %}Perfil de {{ profile_user.username }} - Social Media{% endblock %}
+
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="content-wide">
+        <!-- BOTÃO VOLTAR -->
+        <div style="margin-bottom: 20px;">
+            <button type="button" onclick="window.history.back()" class="button-submit" style="background-color: transparent; border: 1px solid rgba(0,0,0,0.15); color: inherit; width: auto; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 16px; margin-top: 0;">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
+        </div>
+
+        <!-- CARD DO PERFIL -->
+        <div class="compose-card" style="max-width: 100%; margin-bottom: 24px;">
+            <!-- CABEÇALHO DO PERFIL (FOTO, NOME E BIO) -->
+            <div class="profile-header" style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 24px; margin-bottom: 20px;">
+                
+                <!-- Foto de Perfil -->
+                <div class="profile-avatar" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background-color: var(--border-color, #e0e0e0); flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                    {% if profile_user.profile_picture %}
+                        <img src="{{ profile_user.profile_picture.url }}" alt="Foto de {{ profile_user.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        <i class="fa-solid fa-user fa-3x" style="color: var(--ink-faint, #888);"></i>
+                    {% endif %}
+                </div>
+
+                <!-- Informações Principais -->
+                <div class="profile-main-info" style="flex: 1; min-width: 200px;">
+                    <h1 class="title" style="margin: 0; font-size: 24px;">
+                        {{ profile_user.name|default:profile_user.username }}
+                    </h1>
+                    <p class="post-card__meta" style="margin: 4px 0 12px 0; font-size: 15px;">
+                        @{{ profile_user.username }}
+                    </p>
+
+                    {% if profile_user.bio %}
+                        <p class="post-card__content" style="margin-bottom: 0;">{{ profile_user.bio|linebreaksbr }}</p>
+                    {% else %}
+                        <p style="color: var(--ink-faint, #888); font-style: italic; margin-bottom: 0;">Nenhuma biografia informada.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- INFORMAÇÕES DETALHADAS -->
+            <div class="profile-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+                
+                <!-- Email -->
+                 {% if profile_user.cpf and request.user == profile_user %}
+                <div class="detail-item" style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-envelope" style="color: var(--ink-faint, #666); font-size: 18px;"></i>
+                    <div>
+                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">E-mail</strong>
+                        <span>{{ profile_user.email }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Localização (Cidade, UF, País) -->
+                {% if profile_user.city or profile_user.state or profile_user.country %}
+                <div class="detail-item" style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-location-dot" style="color: var(--ink-faint, #666); font-size: 18px;"></i>
+                    <div>
+                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">Localização</strong>
+                        <span>
+                            {% if profile_user.city %}{{ profile_user.city }}{% endif %}{% if profile_user.state %}, {{ profile_user.state }}{% endif %}{% if profile_user.country %} - {{ profile_user.country }}{% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- CPF (Exibido com privacidade apenas para o próprio usuário logado) -->
+                {% if profile_user.cpf and request.user == profile_user %}
+                <div class="detail-item" style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-id-card" style="color: var(--ink-faint, #666); font-size: 18px;"></i>
+                    <div>
+                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">CPF</strong>
+                        <span>{{ profile_user.cpf }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Data de Cadastro -->
+                <div class="detail-item" style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-calendar-days" style="color: var(--ink-faint, #666); font-size: 18px;"></i>
+                    <div>
+                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">Membro desde</strong>
+                        <span>{{ profile_user.date_joined|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- LISTA DE POSTS DO USUÁRIO -->
+        {% if user_posts %}
+            <h2 class="title" style="margin-bottom: 16px; font-size: 20px;">
+                <i class="fa-solid fa-newspaper"></i> Publicações de {{ profile_user.name|default:profile_user.username }}
+            </h2>
+            <section class="feed">
+                {% for post in user_posts %}
+                <article class="post-card" id="{{ post.id }}">
+                    <h2 class="post-card__title">{{ post.title }}</h2>
+                    <p class="post-card__meta">
+                        {{ post.data_posted|date:"H:i · m/d/Y" }}
+                    </p>
+                    <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
+
+                    <div class="post-card__actions">
+                        <button
+                            type="button"
+                            class="like-btn{% if request.user in post.likes.all %} is-liked{% endif %}"
+                            data-post-id="{{ post.id }}"
+                            aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}"
+                            aria-label="Curtir post">
+                            <i class="fa-solid fa-heart"></i>
+                            <span class="like-count">{{ post.likes.count }}</span>
+                        </button>
+                    </div>
+                </article>
+                {% endfor %}
+            </section>
+        {% endif %}
+    </section>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+$(document).ready(function () {
+    $('.feed').on('click', '.like-btn', function (event) {
+        event.preventDefault();
+
+        var $btn = $(this);
+        var postId = $btn.data('post-id');
+
+        $.ajax({
+            url: '{% url "posts:like_post" post_id=0 %}'.replace('0', postId),
+            type: 'POST', // Mudado de GET para POST
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function (data) {
+                $btn.toggleClass('is-liked', data.liked);
+                $btn.attr('aria-pressed', data.liked);
+                $btn.find('.like-count').text(data.liked_counts);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
