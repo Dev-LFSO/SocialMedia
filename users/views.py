@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from posts.models import Post
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from .forms import UserRegisterForm, ProfileUpdateForm
 
@@ -47,6 +49,25 @@ def logout_view(request):
     if request.GET.get('next'):
         return redirect(request.GET.get("next"))
     return redirect('home')
+
+def search_user(request):
+    query = request.GET.get('q', '').strip()
+    users_data = []
+
+    if query:
+        # Busca por username ou nome, excluindo o próprio usuário logado
+        users = User.objects.filter(
+            Q(username__icontains=query) | Q(name__icontains=query)
+        ).exclude(id=request.user.id)[:10]  # Limita aos 10 primeiros resultados
+
+        for u in users:
+            users_data.append({
+                'username': u.username,
+                'name': u.name or u.username,
+                'avatar': u.profile_picture.url if u.profile_picture else None
+            })
+
+    return JsonResponse({'users': users_data})
 
 @login_required(login_url='users:login')
 def get_user(request, username):

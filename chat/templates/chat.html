@@ -1,0 +1,475 @@
+{% extends "main.html" %}
+{% load static %}
+
+{% block title %}Mensagens - Social Media{% endblock %}
+
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="content-wide" style="padding-bottom: 0;">
+        <div class="chat-wrapper">
+            
+            <!-- LISTA DE CONVERSAS (LATERAL ESQUERDA) -->
+            <aside class="chat-sidebar-list" id="chatSidebarList">
+                <div class="chat-sidebar-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h2 style="margin: 0;"><i class="fa-solid fa-comments"></i> Mensagens</h2>
+                        <button type="button" class="btn-new-chat" id="openNewChatModal" title="Nova conversa">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                    </div>
+                    <div class="chat-search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchChatInput" placeholder="Buscar conversa...">
+                    </div>
+                </div>
+
+                <div id="newChatModal" class="modal-overlay">
+                    <div class="modal-card">
+                        <div class="modal-header">
+                            <h3>Iniciar nova conversa</h3>
+                            <button type="button" class="modal-close-btn" id="closeNewChatModal">&times;</button>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <div class="chat-search-box" style="margin-bottom: 16px;">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="newChatSearchInput" placeholder="Digite o username e aperte Enter..." autocomplete="off">
+                            </div>
+
+                            <!-- RESULTADOS DA BUSCA -->
+                            <div id="modalSearchResults" class="modal-user-list">
+                                <p class="modal-placeholder-text">Digite o username do usuário e pressione <strong>Enter</strong> para buscar.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="conversations-list">
+                    {% for conversa in conversations %}
+                        <a href="{% url 'chat:get_chat' conversation_id=conversa.id %}" 
+                        class="conversation-item {% if active_conversation and active_conversation.id == conversa.id %}active{% endif %}"
+                        data-conversation-id="{{ conversa.id }}">
+                            
+                            <div class="avatar-wrapper avatar-sm">
+                                {% if conversa.other_user.profile_picture %}
+                                    <img src="{{ conversa.other_user.profile_picture.url }}" alt="{{ conversa.other_user.username }}" class="avatar-img">
+                                {% else %}
+                                    <div class="profile-avatar-placeholder">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                {% endif %}
+                                <span class="status-dot online"></span>
+                            </div>
+
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <span class="user-name">
+                                        {{ conversa.other_user.username }}
+                                    </span>
+                                    {% if conversa.last_message %}
+                                    <span class="message-time">{{ conversa.last_message.timestamp|date:"H:i" }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="conversation-bottom">
+                                    {% if conversa.last_message %}
+                                    <p class="last-message">
+                                        {% if conversa.last_message.sender == request.user %}
+                                        Você: 
+                                        {% else %}
+                                        {{ conversa.other_user.username }}:     
+                                        {% endif %}
+                                        {{ conversa.last_message.content }}
+                                    </p>
+                                    {% else %}
+                                    <p class="last-message">Nenhuma mensagem!</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- BOTÃO DE EXCLUIR CONVERSA -->
+                            <button type="button" 
+                                    class="delete-conversation-btn" 
+                                    data-url="{% url 'chat:delete_chat' conversation_id=conversa.id %}" 
+                                    title="Excluir conversa">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </a>
+                    {% endfor %}
+                </div>
+            </aside>
+
+            <!-- JANELA PRINCIPAL DE CHAT (LADO DIREITO) -->
+             <section class="chat-main-window">
+                {% if active_conversation %}
+                    <!-- 1. CABEÇALHO DO CHAT ATIVO -->
+                    <header class="chat-header">
+                        <button class="back-to-list-btn" id="backToListBtn" type="button" aria-label="Voltar para conversas">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+
+                        <div class="chat-header-user">
+                            <div class="avatar-wrapper avatar-sm">
+                                {% if active_conversation.other_user.profile_picture %}
+                                    <img src="{{ active_conversation.other_user.profile_picture.url }}" alt="{{ active_conversation.other_user.username }}" class="avatar-img">
+                                {% else %}
+                                    <div class="profile-avatar-placeholder">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                {% endif %}
+                                <span class="status-dot online"></span>
+                            </div>
+                            <div class="header-user-details">
+                                 <a href="{% url 'users:get_user' username=active_conversation.other_user.username %}" title="Ver Perfil" class="header-action-btn">
+                                    <h3>{{ active_conversation.other_user.name|default:active_conversation.other_user.username }}</h3>
+                                </a>
+                                <span class="user-status-text">@{{ active_conversation.other_user.username }}</span>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- 2. ÁREA DE MENSAGENS (ROLÁVEL) -->
+                    <div class="messages-container" id="messagesContainer">
+                        {% if messages %}
+                            {% for msg in messages %}
+                                {% if msg.sender == request.user %}
+                                    <!-- MENSAGEM ENVIADA PELO USUÁRIO LOGADO (LADO DIREITO) -->
+                                    <div class="message-group outgoing">
+                                        <div class="message-body">
+                                            <div class="message-bubble">
+                                                {{ msg.content|linebreaksbr }}
+                                            </div>
+                                            <span class="message-time">
+                                                {{ msg.timestamp|date:"H:i" }}
+                                                {% if msg.is_read %}
+                                                    <i class="fa-solid fa-check-double read-status"></i>
+                                                {% else %}
+                                                    <i class="fa-solid fa-check"></i>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <!-- MENSAGEM RECEBIDA (LADO ESQUERDO) -->
+                                    <div class="message-group incoming">
+                                        <div class="avatar-wrapper avatar-xs" style="align-self: flex-end;">
+                                            {% if active_conversation.other_user.profile_picture %}
+                                                <img src="{{ active_conversation.other_user.profile_picture.url }}" alt="{{ active_conversation.other_user.username }}" class="avatar-img">
+                                            {% else %}
+                                                <div class="profile-avatar-placeholder">
+                                                    <i class="fa-solid fa-user"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="message-body">
+                                            <div class="message-bubble">
+                                                {{ msg.content|linebreaksbr }}
+                                            </div>
+                                            <span class="message-time">{{ msg.timestamp|date:"H:i" }}</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <!-- MENSAGEM INICIAL CASO SEJA UM CHAT NOVO -->
+                            <div class="empty-messages-state">
+                                <i class="fa-solid fa-hand-wave"></i>
+                                <p>Sua conversa começa aqui! Envie uma mensagem para <strong>{{ active_conversation.other_user.name|default:active_conversation.other_user.username }}</strong>.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 3. RODAPÉ E CAMPO DE DIGITAÇÃO -->
+                    <footer class="chat-footer">
+                        <form id="chatForm" class="chat-input-form" method="POST" action="{% url 'chat:send_message' conversation_id=active_conversation.id %}">
+                            {% csrf_token %}
+                            <div class="input-wrapper">
+                                <textarea id="messageInput" name="content" placeholder="Digite uma mensagem..." rows="1" required></textarea>
+                            </div>
+
+                            <button type="submit" class="chat-send-btn" title="Enviar mensagem">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </footer>
+
+                {% else %}
+                    <!-- ESTADO VAZIO (QUANDO NENHUMA CONVERSA FOI SELECIONADA AINDA) -->
+                    <div class="no-chat-selected">
+                        <div class="no-chat-icon">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <h3>Sua caixa de entrada</h3>
+                        <p>Selecione uma conversa na barra lateral ou inicie um novo bate-papo.</p>
+                        <button type="button" class="btn-send-message" onclick="$('#openNewChatModal').click();">
+                            <i class="fa-solid fa-pen-to-square"></i> Nova Conversa
+                        </button>
+                    </div>
+                {% endif %}
+
+            </section>
+        </div>
+    </section>
+</main>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+$(document).on('keydown', '#messageInput', function (e) {
+    // Verifica se pressionou Enter SEM segurar a tecla Shift
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); // Impede a quebra de linha padrão no textarea
+        
+        var $form = $(this).closest('form');
+        
+        // Só dispara o envio se o campo não estiver vazio
+        if ($(this).val().trim() !== '') {
+            $form.submit();
+        }
+    }
+});
+$(document).ready(function () {
+
+    // Clique na conversa da barra lateral
+    $(document).on('click', '.conversation-item', function (e) {
+        e.preventDefault(); // Impede o recarregamento total da página
+
+        var $clickedItem = $(this);
+        var targetUrl = $clickedItem.attr('href');
+
+        if (!targetUrl || targetUrl === '#') return;
+
+        // Destaque visual da conversa selecionada
+        $('.conversation-item').removeClass('active');
+        $clickedItem.addClass('active');
+
+        var $mainWindow = $('.chat-main-window');
+        $mainWindow.css('opacity', '0.5'); // Efeito visual de carregamento
+
+        // Requisição AJAX para buscar a conversa
+        $.ajax({
+            url: targetUrl,
+            type: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function (data) {
+                // 1. Usa o DOMParser nativo do navegador para ler o HTML completo retornado
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(data, 'text/html');
+                
+                // 2. Procura pela div/section .chat-main-window no HTML carregado
+                var newChatElement = doc.querySelector('.chat-main-window');
+
+                if (newChatElement) {
+                    // 3. Substitui o conteúdo da tela pelo novo chat
+                    $mainWindow.html(newChatElement.innerHTML);
+
+                    // 4. Atualiza a URL no navegador sem dar F5
+                    window.history.pushState({ path: targetUrl }, '', targetUrl);
+
+                    // 5. Rola a caixa de mensagens para o final
+                    if (typeof scrollToBottom === 'function') {
+                        scrollToBottom();
+                    }
+                } else {
+                    console.error("Classe .chat-main-window não encontrada no HTML retornado.");
+                    window.location.href = targetUrl; // Fallback se não encontrar
+                }
+                $mainWindow.css('opacity', '1');
+            },
+            error: function (xhr, status, error) {
+                console.error("Erro na requisição AJAX:", error);
+                window.location.href = targetUrl; // Se falhar, abre recarregando a página
+            }
+        });
+    });
+
+});
+$(document).ready(function () {
+    const $messagesContainer = $('#messagesContainer');
+    const $chatWrapper = $('.chat-wrapper');
+
+    // Rola a caixa de mensagens automaticamente para o final
+    function scrollToBottom() {
+        var $messagesContainer = $('#messagesContainer');
+        // Verifica se o contêiner existe e tem o elemento DOM [0]
+        if ($messagesContainer.length && $messagesContainer[0]) {
+            $messagesContainer.scrollTop($messagesContainer[0].scrollHeight);
+        }
+    }
+    scrollToBottom();
+
+    // Auto-ajuste de altura da textarea conforme o usuário digita
+    $('#messageInput').on('input', function () {
+        if (this) {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        }
+    });
+
+    // Alternar visibilidade no mobile
+    $('.conversation-item').on('click', function (e) {
+        e.preventDefault();
+        $('.conversation-item').removeClass('active');
+        $(this).addClass('active');
+        
+        $chatWrapper.addClass('show-chat');
+        scrollToBottom();
+    });
+
+    $('#backToListBtn').on('click', function () {
+        $chatWrapper.removeClass('show-chat');
+    });
+
+    // Filtro de conversas
+    $('#searchChatInput').on('keyup', function () {
+        var value = $(this).val().toLowerCase();
+        $('.conversations-list .conversation-item').filter(function () {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+});
+$(document).ready(function () {
+    const $modal = $('#newChatModal');
+    const $searchInput = $('#newChatSearchInput');
+    const $resultsContainer = $('#modalSearchResults');
+
+    // Abrir modal
+    $('#openNewChatModal').on('click', function () {
+        $modal.addClass('active');
+        $searchInput.val('').focus();
+        $resultsContainer.html('<p class="modal-placeholder-text">Digite o username do usuário e pressione <strong>Enter</strong> para buscar.</p>');
+    });
+
+    // Fechar modal no botão (X) ou clicando fora dele
+    $('#closeNewChatModal, #newChatModal').on('click', function (e) {
+        if (e.target === this) {
+            $modal.removeClass('active');
+        }
+    });
+
+    // Evento ao apertar ENTER no campo de busca
+    $searchInput.on('keypress', function (e) {
+        if (e.which === 13) { // TECLA ENTER
+            e.preventDefault();
+            var query = $(this).val().trim();
+
+            if (!query) return;
+
+            $resultsContainer.html('<p class="modal-placeholder-text"><i class="fa-solid fa-spinner fa-spin"></i> Buscando usuários...</p>');
+
+            // Requisição AJAX para buscar usuários
+            $.ajax({
+                url: '{% url "users:search_user" %}', // Rota que retorna o JSON dos usuários
+                data: { 'q': query },
+                dataType: 'json',
+                success: function (data) {
+                    $resultsContainer.empty();
+
+                    if (data.users.length === 0) {
+                        $resultsContainer.html('<p class="modal-placeholder-text">Nenhum usuário encontrado com esse username.</p>');
+                        return;
+                    }
+
+                    // Desenha o retângulo para cada usuário encontrado
+                    $.each(data.users, function (index, user) {                
+                        // Verifica se o usuário tem avatar. Se sim, gera a <img>, senão gera o ícone padrão
+                        var avatarContent = user.avatar 
+                            ? `<img src="${user.avatar}" alt="${user.name}" class="avatar-img">` 
+                            : `<div class="profile-avatar-placeholder"><i class="fa-solid fa-user"></i></div>`;
+
+                        var userHtml = `
+                            <div class="user-select-card" data-username="${user.username}">
+                                <div class="avatar-wrapper" style="width: 38px; height: 38px;">
+                                    ${avatarContent}
+                                </div>
+                                <div class="user-info">
+                                    <span class="user-name">${user.name}</span>
+                                    <span class="user-username">@${user.username}</span>
+                                </div>
+                            </div>
+                        `;
+
+                        $resultsContainer.append(userHtml);
+                    });
+                },
+                error: function () {
+                    $resultsContainer.html('<p class="modal-placeholder-text" style="color: #d32f2f;">Erro ao buscar usuários. Tente novamente.</p>');
+                }
+            });
+        }
+    });
+
+    // Clique no retângulo do usuário para criar/abrir a conversation
+    $resultsContainer.on('click', '.user-select-card', function () {
+        var username = $(this).data('username');
+        
+        // Redireciona para a view start_chat que criamos anteriormente
+        var targetUrl = "{% url 'chat:start_chat' username='USERNAME_PLACEHOLDER' %}".replace('USERNAME_PLACEHOLDER', username);
+        window.location.href = targetUrl;
+    });
+});
+$(document).on('click', '.delete-conversation-btn', function (e) {
+    e.preventDefault();
+    e.stopPropagation(); // IMPEDIMENTO CRÍTICO: Impede que o clique abra o chat
+
+    var $btn = $(this);
+    var $conversationItem = $btn.closest('.conversation-item');
+    var deleteUrl = $btn.data('url');
+
+    // Confirmação antes de deletar
+    if (!confirm('Tem certeza de que deseja excluir esta conversa?')) {
+        return;
+    }
+
+    // Pega o token CSRF do Django
+    var csrfToken = $('input[name="csrfmiddlewaretoken"]').val() || getCookie('csrftoken');
+
+    $.ajax({
+        url: deleteUrl,
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function (response) {
+            if (response.success) {
+                // Se a conversa excluída for a que está aberta no momento, limpa a janela direita
+                if ($conversationItem.hasClass('active')) {
+                    $('.chat-main-window').html(`
+                        <div class="no-chat-selected">
+                            <div class="no-chat-icon"><i class="fa-solid fa-comments"></i></div>
+                            <h3>Sua caixa de entrada</h3>
+                            <p>Selecione uma conversa na barra lateral ou inicie um novo bate-papo.</p>
+                        </div>
+                    `);
+                    window.history.pushState({}, '', '/chat/');
+                }
+
+                // Animação de sumir antes de remover do HTML
+                $conversationItem.fadeOut(300, function () {
+                    $(this).remove();
+                });
+            }
+        },
+        error: function (xhr) {
+            console.error('Erro ao excluir conversa:', xhr);
+            alert('Não foi possível excluir a conversa. Tente novamente.');
+        }
+    });
+});
+</script>
+{% endblock %}

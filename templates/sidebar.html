@@ -3,7 +3,7 @@
         <li><a href="{% url "posts:create_post" %}" class="nav-primary"><i class="fa-solid fa-plus"></i><span>Novo post</span></a></li>
         <li><a href="{% url "posts:all_posts" %}"><i class="fa-solid fa-newspaper fa-sm"></i><span>Posts</span></a></li>
         <li><a href="{% url "posts:search_post" %}"><i class="fa-solid fa-magnifying-glass fa-sm"></i><span>Buscar</span></a></li>
-        <li><a href="#"><i class="fa-regular fa-message fa-sm"></i><span>Mensagens</span></a></li>
+        <li><a href="{% url "chat:get_chat" %}"><i class="fa-regular fa-message fa-sm"></i><span>Mensagens</span></a></li>
         <li><a href="{% url "users:my_user" %}"><i class="fa-solid fa-user-large fa-sm"></i><span>Perfil</span></a></li>
     </ul>
 </aside>
