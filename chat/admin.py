@@ -17,5 +17,4 @@ class ConversationAdmin(admin.ModelAdmin):
     display_participants.short_description = 'Participantes'
 
 # Register your models here.
-admin.site.register(Conversation)
 admin.site.register(Message)

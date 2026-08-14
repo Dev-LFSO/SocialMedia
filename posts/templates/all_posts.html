@@ -12,12 +12,11 @@
             <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
 
             {% if user.is_authenticated %}
-            <button
-                type="button"
-                class="like-btn{% if request.user in post.likes.all %} is-liked{% endif %}"
-                data-post-id="{{ post.id }}"
-                aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}"
-                aria-label="Curtir post">
+            <button type="button" 
+                    class="like-btn" 
+                    data-url="{% url 'posts:like_post' post.id %}" 
+                    aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}" 
+                    aria-label="Curtir post">
                 <i class="fa-solid fa-heart"></i>
                 <span class="like-count">{{ post.likes.count }}</span>
             </button>
@@ -62,51 +61,92 @@ function incrementarTextoCurtidas(texto, value) {
     return novaQuantidade + ' curtidas';
 }
 
-$(document).ready(function () {
-    $('.feed').on('click', '.like-btn', function (event) {
-        event.preventDefault();
+$(document).ready(function() {
 
-        var $btn = $(this);
-        var postId = $btn.data('post-id');
+    // 1. FUNÇÃO AUXILIAR: Atualiza o texto na lista Trending
+    function atualizarTrendingItem(postId, estaCurtido) {
+        $('.trending-item').each(function (index, elemento) { 
+            var $link = $(elemento).find('a');
+            var href = $link.attr('href');
+
+            // Verifica se o link do item trending contém o ID do post
+            if (href && href.includes(postId)) {
+                var $primeiraLi = $(elemento).find('ul li').first();
+                var textoAtual = $primeiraLi.text();
+                
+                // Se curtiu passa +1, se descurtiu passa -1
+                var delta = estaCurtido ? 1 : -1;
+                var novoTexto = incrementarTextoCurtidas(textoAtual, delta);
+                
+                $primeiraLi.text(novoTexto);
+            }
+        });
+    }
+
+    // 2. EVENTO: Clique no botão de curtir
+    $('.like-btn').on('click', function() {
+        const $btn = $(this);
+        const $count = $btn.find('.like-count');
+        
+        const likeUrl = $btn.data('url');
+        const postId = $btn.data('post-id'); // Pega o ID do post direto do data-post-id
+
+        // Pega o estado atual e calcula o novo estado
+        const isLiked = $btn.attr('aria-pressed') === 'true';
+        const newLikedState = !isLiked;
+        let currentLikes = parseInt($count.text()) || 0;
+
+        // ----------------------------------------------------
+        // ATUALIZAÇÃO OTIMISTA (Muda tudo instantaneamente)
+        // ----------------------------------------------------
+        
+        // A) Atualiza o visual do botão principal
+        $btn.attr('aria-pressed', newLikedState);
+        $count.text(newLikedState ? currentLikes + 1 : currentLikes - 1);
+
+        // B) Atualiza a lista Trending imediatamente
+        atualizarTrendingItem(postId, newLikedState);
+
+        // ----------------------------------------------------
+        // REQUISIÇÃO EM SEGUNDO PLANO
+        // ----------------------------------------------------
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
 
         $.ajax({
-            url: '{% url "posts:like_post" post_id=0 %}'.replace('0', postId),
-            type: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
+            url: likeUrl,
+            type: "POST",
+            headers: { 
+                "X-CSRFToken": csrfToken 
             },
-            success: function (data) {
-
-                $btn.toggleClass('is-liked', data.liked);
-                $btn.attr('aria-pressed', data.liked);
-                $btn.find('.like-count').text(data.liked_counts);
-
-                $btn.addClass('pulse');
-                setTimeout(function () {
-                    $btn.removeClass('pulse');
-                }, 400);
-
-                var $listaTrending = $('.trending-item');
-
-                $listaTrending.each(function (index, elemento) {
-                    var $link = $(elemento).find('a');
-                    var href = $link.attr('href');
-
-                    if (href && href.includes(postId)) {
-                        var $primeiraLi = $(elemento).find('ul li').first();
-                        var textoAtual = $primeiraLi.text();
-                        if (data.liked){
-                            var novoTexto = incrementarTextoCurtidas(textoAtual, 1);
-                        } else{
-                            var novoTexto = incrementarTextoCurtidas(textoAtual, -1);
-                        }
-                        $primeiraLi.text(novoTexto);
-                    }
-                });
+            dataType: "json",
+            error: function(xhr, status, error) {
+                // SE DER ERRO: Reverte o botão e o Trending para o estado anterior
+                $btn.attr('aria-pressed', isLiked);
+                $count.text(currentLikes);
                 
+                atualizarTrendingItem(postId, isLiked);
+
+                alert('Erro ao registrar curtida. Tente novamente.');
             }
         });
     });
+
 });
+
+// Função utilitária para capturar o cookie do CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 </script>
 {% endblock %}

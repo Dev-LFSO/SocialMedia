@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -100,3 +101,16 @@ def my_user(request):
             'user': user,
         }
     return render(request, 'my_user.html', data)
+
+@login_required
+@require_POST
+def remove_profile_picture(request):
+    # Adapte caso a foto esteja no request.user ou em um modelo relacionado (ex: request.user.perfil)
+    usuario_ou_perfil = request.user 
+
+    if usuario_ou_perfil.profile_picture:
+        # Apaga o arquivo físico da imagem e limpa o campo
+        usuario_ou_perfil.profile_picture.delete(save=True)
+        return JsonResponse({'status': 'success', 'message': 'Foto removida!'})
+    
+    return JsonResponse({'status': 'error', 'message': 'Nenhuma foto encontrada'}, status=400)

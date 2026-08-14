@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path
-from .views import login_view, logout_view, register, my_user, get_user, search_user
+from .views import login_view, logout_view, register, my_user, get_user, search_user, remove_profile_picture
 
 app_name = 'users'
 
@@ -25,5 +25,6 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('<str:username>', get_user, name='get_user'),
     path('my_user/', my_user, name='my_user'),
-    path('search_user/', search_user, name='search_user')
+    path('search_user/', search_user, name='search_user'),
+    path('remove_profile_picture/', remove_profile_picture, name='remove_profile_picture'),
 ]

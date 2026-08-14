@@ -10,7 +10,7 @@
     <section class="content-wide">
         <!-- BOTÃO VOLTAR -->
         <div style="margin-bottom: 20px;">
-            <button type="button" onclick="window.history.back()" class="button-submit" style="background-color: transparent; border: 1px solid rgba(0,0,0,0.15); color: inherit; width: auto; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 16px; margin-top: 0;">
+            <button type="button" onclick="window.history.back()" class="button-submit" style="border: 1px solid rgba(0,0,0,0.15); color: inherit; width: auto; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 16px; margin-top: 0;">
                 <i class="fa-solid fa-arrow-left"></i> Voltar
             </button>
         </div>
@@ -111,12 +111,11 @@
                     <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
 
                     <div class="post-card__actions">
-                        <button
-                            type="button"
-                            class="like-btn{% if request.user in post.likes.all %} is-liked{% endif %}"
-                            data-post-id="{{ post.id }}"
-                            aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}"
-                            aria-label="Curtir post">
+                        <button type="button" 
+                                class="like-btn" 
+                                data-url="{% url 'posts:like_post' post.id %}" 
+                                aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}" 
+                                aria-label="Curtir post">
                             <i class="fa-solid fa-heart"></i>
                             <span class="like-count">{{ post.likes.count }}</span>
                         </button>
@@ -130,26 +129,65 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
-$(document).ready(function () {
-    $('.feed').on('click', '.like-btn', function (event) {
-        event.preventDefault();
+$(document).ready(function() {
 
-        var $btn = $(this);
-        var postId = $btn.data('post-id');
+    $('.like-btn').on('click', function() {
+        const $btn = $(this);
+        const $count = $btn.find('.like-count');
+        const likeUrl = $btn.data('url');
 
+        // 1. Lê o estado atual
+        const isLiked = $btn.attr('aria-pressed') === 'true';
+        let currentLikes = parseInt($count.text()) || 0;
+
+        // 2. ATUALIZAÇÃO OTIMISTA (Muda o visual instantaneamente)
+        const newLikedState = !isLiked;
+        $btn.attr('aria-pressed', newLikedState);
+        $count.text(newLikedState ? currentLikes + 1 : currentLikes - 1);
+
+        // 3. Pega o Token CSRF do Django
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+
+        // 4. Envia para a View do Django em segundo plano
         $.ajax({
-            url: '{% url "posts:like_post" post_id=0 %}'.replace('0', postId),
-            type: 'POST', // Mudado de GET para POST
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
+            url: likeUrl,
+            type: "POST",
+            headers: { 
+                "X-CSRFToken": csrfToken 
             },
-            success: function (data) {
-                $btn.toggleClass('is-liked', data.liked);
-                $btn.attr('aria-pressed', data.liked);
-                $btn.find('.like-count').text(data.liked_counts);
+            dataType: "json",
+            success: function(data) {
+                // Caso a sua view retorne o total atualizado no servidor, 
+                // você pode sincronizar aqui se desejar:
+                if (data.like_count !== undefined) {
+                    $count.text(data.like_count);
+                }
+            },
+            error: function(xhr, status, error) {
+                // Se der erro de conexão/servidor, REVERTE o botão para o estado anterior
+                $btn.attr('aria-pressed', isLiked);
+                $count.text(currentLikes);
+                alert('Erro ao registrar a curtida. Tente novamente.');
             }
         });
     });
+
 });
+
+// Função utilitária para capturar o cookie do CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 </script>
 {% endblock %}

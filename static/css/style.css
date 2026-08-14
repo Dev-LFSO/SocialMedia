@@ -3,9 +3,8 @@
 /* ==========================================================================
    1. FONTES E IMPORTS
    ========================================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
-
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;1,400&family=Poppins:wght@600;700&display=swap');
 /* ==========================================================================
    2. DESIGN TOKENS / VARIÁVEIS
    ========================================================================== */
@@ -62,13 +61,46 @@
 /* ==========================================================================
    3. RESET & BASE
    ========================================================================== */
+body, p, li, span, td, th {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* 3. TÍTULOS (Destaque encorpado e marcante) */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* 4. BOTÕES E CAMPOS DE FORMULÁRIO (Aparência limpa de aplicativo) */
+button, input, select, textarea, .btn {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+}
+
+/* 5. CITAÇÕES E FRASES EM DESTAQUE (Estilo editorial elegante) */
+blockquote, cite {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+}
+
+/* 6. CÓDIGOS E BLOCOS DE TEXTO TÉCNICO */
+code, pre, kbd {
+    font-family: 'Fira Code', monospace;
+}
+
+/* 🛡️ ESCUDO DE PROTEÇÃO PARA O FONT AWESOME */
+/* Garante que nada sobrescreva os ícones */
+i[class*="fa-"], span[class*="fa-"], .fa-solid, .fa-regular, .fa-brands {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+}
+
 *,
 *::before,
 *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 html {
@@ -531,6 +563,7 @@ aside.nav-rail {
 
 .post-card__content,
 .post-excerpt {
+
     font-size: 0.95rem;
     line-height: 1.6;
     color: var(--ink-soft);
@@ -547,52 +580,75 @@ aside.nav-rail {
     border-top: 1px solid var(--line);
 }
 
-/* ==========================================================================
-   8. BOTÃO DE CURTIDA & BOTÕES DE AÇÃO (CORRIGIDO)
-   ========================================================================== */
 .like-btn {
-    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    border: 1px solid var(--border-color);
-    background: var(--surface);
-    padding: 6px 14px;
-    border-radius: 20px;
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-weight: 700;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 9999px; /* Formato pílula */
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #64748b;
     font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
 }
 
-.like-btn i {
-    font-size: 16px;
-    color: var(--like-color);
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* Ícone de Coração */
+.like-btn .fa-heart {
+    font-size: 1rem;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s ease;
 }
 
+/* Número de Curtidas */
+.like-btn .like-count {
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
+/* ------------------------------------------
+   ESTADOS (HOVER E ACTIVE)
+   ------------------------------------------ */
+
+/* Ao passar o mouse (Não curtido) */
 .like-btn:hover {
-    background-color: rgba(230, 57, 70, 0.08);
-    border-color: var(--like-color);
-    color: var(--like-color);
+    background-color: #fff1f2;
+    border-color: #fecdd3;
+    color: #e11d48;
 }
 
-.like-btn.is-liked {
-    background-color: var(--like-color);
-    border-color: var(--like-color);
-    color: #ffffff !important;
+.like-btn:hover .fa-heart {
+    transform: scale(1.18); /* Leve pulo do coração */
 }
 
-.like-btn.is-liked i {
-    color: #ffffff !important;
-    transform: scale(1.1);
+/* Efeito de clique (pressionar botão) */
+.like-btn:active {
+    transform: scale(0.95);
 }
 
-.like-btn.pulse i {
-    animation: like-pop 0.4s ease;
+/* ------------------------------------------
+   ESTADO: CURTIDO (aria-pressed="true")
+   ------------------------------------------ */
+.like-btn[aria-pressed="true"] {
+    background-color: #ffe4e6;
+    border-color: #fda4af;
+    color: #e11d48;
+}
+
+.like-btn[aria-pressed="true"] .fa-heart {
+    color: #e11d48;
+    animation: heartPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animação do coração saltando ao curtir */
+@keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
 }
 
 .btn-delete {
@@ -681,8 +737,7 @@ aside.nav-rail {
 .button-submit {
     border: none;
     border-radius: var(--radius-sm);
-    padding: 12px 20px;
-    margin-top: 6px;
+    padding: 14px 21px;;
     font-size: 15px;
     font-weight: 700;
     font-family: var(--font-body);
@@ -733,7 +788,7 @@ aside.nav-rail {
 }
 
 .trending-item {
-    height: 132.25px;
+    height: 143px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
@@ -1066,7 +1121,100 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .inputs a[href*="profile_pictures"]:hover,
 .inputs a[href*="media"]:hover {
-    text-decoration: underline;
+    text-decoration: none;
+}
+
+.div-profile-picture {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    max-width: 100%;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    color: #334155;
+    /* Organiza tudo em coluna com espaçamento uniforme */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* 2. Remove o <br> padrão gerado pelo Django */
+.div-profile-picture br {
+    display: none;
+}
+
+/* 3. Link da imagem atual ("Atualmente:") */
+.div-profile-picture a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+    background-color: #eff6ff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Corta nomes de arquivo muito longos com "..." */
+    white-space: nowrap;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.div-profile-picture a:hover {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* 4. Estilização da opção "Limpar" */
+.div-profile-picture input[type="checkbox"] {
+    accent-color: #ef4444; /* Cor vermelha para o checkbox */
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.div-profile-picture label[for="profile_picture-clear_id"] {
+    color: #dc2626;
+    width: 100%;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: 2px;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.div-profile-picture label[for="profile_picture-clear_id"]:hover {
+    opacity: 0.8;
+}
+
+/* 5. Estilização do Input de Selecionar Arquivo ("Modificar:") */
+.div-profile-picture input[type="file"] {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Customiza o botão do input file */
+.div-profile-picture input[type="file"]::file-selector-button {
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-weight: 500;
+    color: #0f172a;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: all 0.2s ease;
+}
+
+.div-profile-picture input[type="file"]::file-selector-button:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
 }
 
 .field-hint {
