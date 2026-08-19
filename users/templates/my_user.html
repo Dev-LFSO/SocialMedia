@@ -43,7 +43,7 @@
         <!-- ABAS DE NAVEGAÇÃO DO PERFIL -->
         <div class="profile-tabs">
             <button class="tab-button active" onclick="switchTab('posts-tab', this)">
-                <i class="fa-solid fa-newspaper"></i> Meus Posts ({{ user.posts.count|default:0 }})
+                <i class="fa-solid fa-newspaper"></i> Meus Posts ({{ posts.paginator.count|default:0 }})
             </button>
             <button class="tab-button" onclick="switchTab('edit-tab', this)">
                 <i class="fa-solid fa-pen-to-square"></i> Editar Perfil
@@ -52,10 +52,10 @@
 
         <!-- CONTEÚDO DA ABA 1: MEUS POSTS -->
         <div id="posts-tab" class="tab-content active">
-            {% if user.posts.all %}
+            {% if posts %}
                 <div class="feed">
-                    {% for post in user.posts.all %}
-                        <article class="post-card">
+                    {% for post in posts %}
+                        <article class="post-card" id="{{ post.id }}">
                             <h2 class="post-card__title">{{ post.title }}</h2>
                             <p class="post-card__meta">
                                 Publicado em {{ post.data_posted|date:"d/m/Y \à\s H:i" }}
@@ -83,6 +83,22 @@
                         </article>
                     {% endfor %}
                 </div>
+
+                {% if posts.paginator.num_pages > 1 %}
+                <nav class="pagination" aria-label="Navegação de páginas">
+                    {% if posts.has_previous %}
+                        <a href="?page=1#posts-tab" class="pagination__btn" aria-label="Primeira página"><i class="fa-solid fa-angles-left"></i></a>
+                        <a href="?page={{ posts.previous_page_number }}#posts-tab" class="pagination__btn" aria-label="Página anterior"><i class="fa-solid fa-angle-left"></i></a>
+                    {% endif %}
+
+                    <span class="pagination__status">Página {{ posts.number }} de {{ posts.paginator.num_pages }}</span>
+
+                    {% if posts.has_next %}
+                        <a href="?page={{ posts.next_page_number }}#posts-tab" class="pagination__btn" aria-label="Próxima página"><i class="fa-solid fa-angle-right"></i></a>
+                        <a href="?page={{ posts.paginator.num_pages }}#posts-tab" class="pagination__btn" aria-label="Última página"><i class="fa-solid fa-angles-right"></i></a>
+                    {% endif %}
+                </nav>
+                {% endif %}
             {% else %}
                 <div class="empty-state">
                     <i class="fa-regular fa-newspaper fa-2x" style="margin-bottom: 12px;"></i>

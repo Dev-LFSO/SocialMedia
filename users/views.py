@@ -2,14 +2,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth import login, logout, authenticate
+from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from posts.models import Post
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from .forms import UserRegisterForm, ProfileUpdateForm
 
 User = get_user_model()
+
+POSTS_POR_PAGINA = 10
 
 # Create your views here.
 def register(request):
@@ -70,6 +74,7 @@ def search_user(request):
 
     return JsonResponse({'users': users_data})
 
+@never_cache
 @login_required(login_url='users:login')
 def get_user(request, username):
     user = get_object_or_404(User, username=username)
@@ -83,23 +88,25 @@ def get_user(request, username):
 @login_required(login_url='users:login')
 def my_user(request):
     user = request.user
+
+    posts_list = Post.objects.filter(user=user).order_by('-data_posted', '-id')
+    paginator = Paginator(posts_list, POSTS_POR_PAGINA)
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
-        data = {
-            'form': form,
-            'user': user,
-        }
         if form.is_valid():
             form.save()
             return redirect('users:my_user')
-        else:
-            return render(request, 'my_user.html', data)
     else:
         form = ProfileUpdateForm(instance=request.user)
-        data = {
-            'form': form,
-            'user': user,
-        }
+
+    data = {
+        'form': form,
+        'user': user,
+        'posts': posts,
+    }
     return render(request, 'my_user.html', data)
 
 @login_required

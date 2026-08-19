@@ -34,7 +34,7 @@
             <p class="post-card__meta" style="margin-bottom: 16px; font-size: 15px;">
                 Resultados para: <strong>"{{ query }}"</strong> 
                 {% if posts %}
-                    ({{ posts|length }} encontrado{{ posts|length|pluralize:"s" }})
+                    ({{ posts.paginator.count }} encontrado{{ posts.paginator.count|pluralize:"s" }})
                 {% endif %}
             </p>
         {% endif %}
@@ -72,6 +72,22 @@
                 {% endif %}
             </div>
             {% endfor %}
+
+            {% if posts.paginator.num_pages > 1 %}
+            <nav class="pagination" aria-label="Navegação de páginas">
+                {% if posts.has_previous %}
+                    <a href="?q={{ query|urlencode }}&page=1" class="pagination__btn" aria-label="Primeira página"><i class="fa-solid fa-angles-left"></i></a>
+                    <a href="?q={{ query|urlencode }}&page={{ posts.previous_page_number }}" class="pagination__btn" aria-label="Página anterior"><i class="fa-solid fa-angle-left"></i></a>
+                {% endif %}
+
+                <span class="pagination__status">Página {{ posts.number }} de {{ posts.paginator.num_pages }}</span>
+
+                {% if posts.has_next %}
+                    <a href="?q={{ query|urlencode }}&page={{ posts.next_page_number }}" class="pagination__btn" aria-label="Próxima página"><i class="fa-solid fa-angle-right"></i></a>
+                    <a href="?q={{ query|urlencode }}&page={{ posts.paginator.num_pages }}" class="pagination__btn" aria-label="Última página"><i class="fa-solid fa-angles-right"></i></a>
+                {% endif %}
+            </nav>
+            {% endif %}
         </section>
     </section>
 </main>

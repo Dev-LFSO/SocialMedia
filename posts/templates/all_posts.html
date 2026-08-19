@@ -15,6 +15,7 @@
             <button type="button" 
                     class="like-btn" 
                     data-url="{% url 'posts:like_post' post.id %}" 
+                    data-post-id="{{ post.id }}"
                     aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}" 
                     aria-label="Curtir post">
                 <i class="fa-solid fa-heart"></i>
@@ -27,13 +28,30 @@
             <p>Ainda não há posts por aqui. Seja o primeiro a publicar!</p>
         </div>
         {% endfor %}
+
+        {% if posts.paginator.num_pages > 1 %}
+        <nav class="pagination" aria-label="Navegação de páginas">
+            {% if posts.has_previous %}
+                <a href="?page=1" class="pagination__btn" aria-label="Primeira página"><i class="fa-solid fa-angles-left"></i></a>
+                <a href="?page={{ posts.previous_page_number }}" class="pagination__btn" aria-label="Página anterior"><i class="fa-solid fa-angle-left"></i></a>
+            {% endif %}
+
+            <span class="pagination__status">Página {{ posts.number }} de {{ posts.paginator.num_pages }}</span>
+
+            {% if posts.has_next %}
+                <a href="?page={{ posts.next_page_number }}" class="pagination__btn" aria-label="Próxima página"><i class="fa-solid fa-angle-right"></i></a>
+                <a href="?page={{ posts.paginator.num_pages }}" class="pagination__btn" aria-label="Última página"><i class="fa-solid fa-angles-right"></i></a>
+            {% endif %}
+        </nav>
+        {% endif %}
     </section>
 
     <aside class="trending">
         <h1 class="panel-title">Mais curtidos</h1>
+        <div class="trending-list">
         {% for post in more_liked_posts %}
         <div class="trending-item">
-            <a href="#{{ post.id }}">{{ post.title }}</a>
+            <a href="{% url 'posts:goto_post' post.id %}">{{ post.title }}</a>
             <ul>
                 <li>{{ post.likes.count }} curtidas</li>
                 <li>Publicado por <a href="{% url 'users:get_user' post.user.username %}">{{ post.user.username }}</a></li>
@@ -45,6 +63,7 @@
             <p>Sem destaques ainda.</p>
         </div>
         {% endfor %}
+        </div>
     </aside>
 </main>
 
