@@ -1,4 +1,19 @@
-media
-venv
+# === AMBIENTE VIRTUAL ===
+venv/
+
+# === BANCO DE DADOS LOCAL ===
 db.sqlite3
-migrations
+
+# === ARQUIVOS DE MÍDIA / UPLOADS ===
+media/
+
+# === MIGRAÇÕES (Ajustado) ===
+# Mantém as pastas 'migrations', mas ignora os arquivos gerados (exceto __init__.py)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# === CACHE DO PYTHON E IDE ===
+__pycache__/
+*.pyc
+.env
+.vscode/
