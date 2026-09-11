@@ -290,9 +290,9 @@ $(document).ready(function () {
                 }
                 $mainWindow.css('opacity', '1');
             },
-            error: function (xhr, status, error) {
-                console.error("Erro na requisição AJAX:", error);
-                window.location.href = targetUrl; // Se falhar, abre recarregando a página
+            error: function (xhr) {
+                console.error('Erro ao excluir conversa:', xhr);
+                showToast('Não foi possível excluir a conversa. Tente novamente.', 'error');
             }
         });
     });
@@ -430,45 +430,39 @@ $(document).on('click', '.delete-conversation-btn', function (e) {
     var $conversationItem = $btn.closest('.conversation-item');
     var deleteUrl = $btn.data('url');
 
-    // Confirmação antes de deletar
-    if (!confirm('Tem certeza de que deseja excluir esta conversa?')) {
-        return;
-    }
+    showConfirm('Tem certeza de que deseja excluir esta conversa?', function () {
+        var csrfToken = $('input[name="csrfmiddlewaretoken"]').val() || getCookie('csrftoken');
 
-    // Pega o token CSRF do Django
-    var csrfToken = $('input[name="csrfmiddlewaretoken"]').val() || getCookie('csrftoken');
+        $.ajax({
+            url: deleteUrl,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function (response) {
+                if (response.success) {
+                    if ($conversationItem.hasClass('active')) {
+                        $('.chat-main-window').html(`
+                            <div class="no-chat-selected">
+                                <div class="no-chat-icon"><i class="fa-solid fa-comments"></i></div>
+                                <h3>Sua caixa de entrada</h3>
+                                <p>Selecione uma conversa na barra lateral ou inicie um novo bate-papo.</p>
+                            </div>
+                        `);
+                        window.history.pushState({}, '', '/chat/');
+                    }
 
-    $.ajax({
-        url: deleteUrl,
-        type: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        success: function (response) {
-            if (response.success) {
-                // Se a conversa excluída for a que está aberta no momento, limpa a janela direita
-                if ($conversationItem.hasClass('active')) {
-                    $('.chat-main-window').html(`
-                        <div class="no-chat-selected">
-                            <div class="no-chat-icon"><i class="fa-solid fa-comments"></i></div>
-                            <h3>Sua caixa de entrada</h3>
-                            <p>Selecione uma conversa na barra lateral ou inicie um novo bate-papo.</p>
-                        </div>
-                    `);
-                    window.history.pushState({}, '', '/chat/');
+                    $conversationItem.fadeOut(300, function () {
+                        $(this).remove();
+                    });
                 }
-
-                // Animação de sumir antes de remover do HTML
-                $conversationItem.fadeOut(300, function () {
-                    $(this).remove();
-                });
+            },
+            error: function (xhr) {
+                console.error('Erro ao excluir conversa:', xhr);
+                showToast('Não foi possível excluir a conversa. Tente novamente.', 'error');
             }
-        },
-        error: function (xhr) {
-            console.error('Erro ao excluir conversa:', xhr);
-            alert('Não foi possível excluir a conversa. Tente novamente.');
-        }
+        });
     });
 });
 </script>

@@ -67,12 +67,12 @@
                                 <button type="button" 
                                         class="like-btn" 
                                         data-url="{% url 'posts:like_post' post.id %}" 
-                                        aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}" 
+                                        aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}" 
                                         aria-label="Curtir post">
                                     <i class="fa-solid fa-heart"></i>
-                                    <span class="like-count">{{ post.likes.count }}</span>
+                                    <span class="like-count">{{ post.num_likes }}</span>
                                 </button>
-                                <form action="{% url 'posts:delete_post' post.id %}" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este post?');">
+                                <form action="{% url 'posts:delete_post' post.id %}" method="POST" style="display: inline;" class="delete-post-form">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-delete" title="Excluir post">
                                         <i class="fa-solid fa-trash-can"></i> Excluir
@@ -218,6 +218,13 @@
 </main>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
+$(document).on('submit', '.delete-post-form', function (e) {
+    e.preventDefault();
+    var formEl = this;
+    showConfirm('Tem certeza que deseja excluir este post? Essa ação não pode ser desfeita.', function () {
+        formEl.submit(); // submit nativo, não dispara o handler jQuery de novo
+    });
+});
 $(document).ready(function() {
     $('label[for="profile_picture-clear_id"]').on('click', function(e) {
         e.preventDefault();
@@ -238,22 +245,21 @@ $(document).ready(function() {
             dataType: "json",
             success: function(data) {
                 if (data.status === 'success') {
-                    // Substitui o conteúdo do container pela foto/ícone padrão
                     $('.profile-avatar-wrapper').html(`
                         <div class="profile-avatar-placeholder">
                             <i class="fa-solid fa-user"></i>
                         </div>
                     `);
-                    alert('Foto removida com sucesso!');
+                    showToast('Foto removida com sucesso!', 'success');
                 } else {
-                    alert('Erro ao apagar a foto: ' + data.message);
+                    showToast('Erro ao apagar a foto: ' + data.message, 'error');
                 }
                 const $fileInput = $('#id_profile_picture');
                 $('.div-profile-picture').empty().append($fileInput);
             },
             error: function(xhr, status, error) {
                 console.error('Erro:', error);
-                alert('Ocorreu um erro ao tentar apagar a foto.');
+                showToast('Ocorreu um erro ao tentar apagar a foto.', 'error');
             }
         });
     });
@@ -293,10 +299,9 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr, status, error) {
-                // Se der erro de conexão/servidor, REVERTE o botão para o estado anterior
                 $btn.attr('aria-pressed', isLiked);
                 $count.text(currentLikes);
-                alert('Erro ao registrar a curtida. Tente novamente.');
+                showToast('Erro ao registrar a curtida. Tente novamente.', 'error');
             }
         });
     });

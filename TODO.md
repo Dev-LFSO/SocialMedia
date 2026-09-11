@@ -6,13 +6,13 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 
 ## 🐛 Débitos técnicos (vale resolver primeiro)
 
-- [ ] **Resolver N+1 queries no feed** — hoje, pra cada post no `{% for %}`, o template chama `post.likes.count` e `request.user in post.likes.all` separadamente. Com 30 posts por página, isso gera dezenas de queries extras. Dá pra resolver anotando os likes na própria queryset da view:
+- [x] **Resolver N+1 queries no feed** — hoje, pra cada post no `{% for %}`, o template chama `post.likes.count` e `request.user in post.likes.all` separadamente. Com 30 posts por página, isso gera dezenas de queries extras. Dá pra resolver anotando os likes na própria queryset da view:
   ```python
   Post.objects.annotate(num_likes=Count('likes')).select_related('user')
   ```
-- [ ] **Trocar `alert()` por notificações mais bonitas** — hoje os erros de curtida usam `alert()` do navegador (`"Erro ao registrar curtida..."`). Um toast/snackbar discreto no canto da tela deixa a experiência bem mais profissional.
-- [ ] **Mover `SECRET_KEY` e `DEBUG` pra variáveis de ambiente** (`django-environ` ou `.env` + `python-decouple`), se ainda não estiver assim — essencial antes de colocar o projeto em produção.
-- [ ] **Adicionar índices de banco** (`db_index=True`) em campos usados em buscas/filtros com frequência, como `title` e `data_posted`.
+- [x] **Trocar `alert()` por notificações mais bonitas** — hoje os erros de curtida usam `alert()` do navegador (`"Erro ao registrar curtida..."`). Um toast/snackbar discreto no canto da tela deixa a experiência bem mais profissional.
+- [x] **Mover `SECRET_KEY` e `DEBUG` pra variáveis de ambiente** (`django-environ` ou `.env` + `python-decouple`), se ainda não estiver assim — essencial antes de colocar o projeto em produção.
+- [x] **Adicionar índices de banco** (`db_index=True`) em campos usados em buscas/filtros com frequência, como `title` e `data_posted`.
 
 ---
 
@@ -39,11 +39,7 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 
 - [ ] **Comentários em posts**
 - [ ] **Seguir / deixar de seguir usuários**, com feed personalizado mostrando só quem você segue
-- [ ] **Sistema de mensagens privadas** — o `style.css` já tem várias classes prontas pra isso (`.chat-main-window`, `.chat-sidebar-header`, `.chat-header`...), então parece que já tinha esse plano; falta só o back-end (model de conversa/mensagem + views)
-- [ ] **Notificações** (alguém curtiu seu post, novo seguidor, etc.)
-- [ ] **Edição de posts** já publicados (hoje só existe criar e excluir)
 - [ ] **Upload de imagens/anexos nos posts**, não só texto
-- [ ] **Hashtags** e página de posts por tag
 - [ ] **Reações além do like** (❤️ 😂 😮 😢, por exemplo)
 - [ ] **Posts salvos/favoritos** (marcar pra ler depois)
 - [ ] **Modo escuro** (dark mode)
@@ -70,14 +66,3 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 - [ ] Logging estruturado de erros (ex: Sentry)
 
 ---
-
-## 💡 Ideias futuras (bônus)
-
-- [ ] Estatísticas no perfil (total de curtidas recebidas, posts por mês, etc.)
-- [ ] Compartilhar post em redes externas (usando o link direto que já criamos com `goto_post`)
-- [ ] Modo "rascunho" pra salvar um post sem publicar
-- [ ] Exportar meus dados (LGPD-friendly)
-
----
-
-> 📌 Dica: vá riscando os itens aqui conforme for implementando, e sinta-se à vontade pra me chamar pra qualquer um desses pontos — é só falar qual quer atacar primeiro.

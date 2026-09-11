@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from posts.models import Post
-from django.db.models import Q
+from django.db.models import Q, Count, Q, Exists, OuterRef
 from django.contrib.auth import get_user_model
 from .forms import UserRegisterForm, ProfileUpdateForm
 
@@ -78,7 +78,13 @@ def search_user(request):
 @login_required(login_url='users:login')
 def get_user(request, username):
     user = get_object_or_404(User, username=username)
-    user_posts = Post.objects.filter(user=user).order_by('-data_posted')
+    likes_do_usuario = Post.likes.through.objects.filter(
+        post_id=OuterRef('pk'), user_id=request.user.id
+    )
+    user_posts = Post.objects.filter(user=user).select_related('user').annotate(
+        num_likes=Count('likes', distinct=True),
+        is_liked=Exists(likes_do_usuario),
+    ).order_by('-data_posted')
     data = {
         'profile_user': user,
         'user_posts': user_posts,
@@ -89,7 +95,13 @@ def get_user(request, username):
 def my_user(request):
     user = request.user
 
-    posts_list = Post.objects.filter(user=user).order_by('-data_posted', '-id')
+    likes_do_usuario = Post.likes.through.objects.filter(
+        post_id=OuterRef('pk'), user_id=user.id
+    )
+    posts_list = Post.objects.filter(user=user).annotate(
+        num_likes=Count('likes', distinct=True),
+        is_liked=Exists(likes_do_usuario),
+    ).order_by('-data_posted', '-id')
     paginator = Paginator(posts_list, POSTS_POR_PAGINA)
     page_number = request.GET.get('page')
     posts = paginator.get_page(page_number)

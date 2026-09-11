@@ -54,10 +54,10 @@
                     <button type="button" 
                             class="like-btn" 
                             data-url="{% url 'posts:like_post' post.id %}" 
-                            aria-pressed="{% if request.user in post.likes.all %}true{% else %}false{% endif %}" 
+                            aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}"
                             aria-label="Curtir post">
                         <i class="fa-solid fa-heart"></i>
-                        <span class="like-count">{{ post.likes.count }}</span>
+                        <span class="like-count">{{ post.num_likes }}</span>
                     </button>
                 </div>
                 {% endif %}
@@ -129,10 +129,9 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr, status, error) {
-                // Se der erro de conexão/servidor, REVERTE o botão para o estado anterior
                 $btn.attr('aria-pressed', isLiked);
                 $count.text(currentLikes);
-                alert('Erro ao registrar a curtida. Tente novamente.');
+                showToast('Erro ao registrar a curtida. Tente novamente.', 'error');
             }
         });
     });

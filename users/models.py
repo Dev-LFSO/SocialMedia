@@ -40,7 +40,7 @@ UF_CHOICES = [
 
 
 class User(AbstractUser):
-    name = models.CharField('Nome completo', max_length=150, blank=True)
+    name = models.CharField('Nome completo', max_length=150, blank=True, db_index=True)
     email = models.EmailField('Email', max_length=254, unique=True)
     bio = models.TextField('Bio', max_length=280, blank=True)
     cpf = models.CharField(
