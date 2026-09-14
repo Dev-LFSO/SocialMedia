@@ -18,7 +18,7 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 
 ## 🔐 Segurança
 
-- [ ] Recuperação de senha ("Esqueci minha senha") via e-mail
+- [x] Recuperação de senha ("Esqueci minha senha") via e-mail
 - [ ] Confirmação de e-mail no cadastro
 - [ ] Rate limiting no login e no cadastro (evitar força bruta)
 - [ ] Validar tipo e tamanho máximo da foto de perfil no upload

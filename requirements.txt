@@ -8,3 +8,6 @@ python-decouple==3.8
 requests==2.34.2
 sqlparse==0.6.0
 urllib3==2.7.0
+
+django-insecure-kdbg(1qf$6411i0fb(vfx0e%hj$90t)q^-zmfngacno4*21u5s
+django-insecure-kdbg(1qf$6411i0fb(vfx0e%hj$90t)q^-zmfngacno4*21u5s
