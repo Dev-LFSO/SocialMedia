@@ -19,8 +19,8 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 ## 🔐 Segurança
 
 - [x] Recuperação de senha ("Esqueci minha senha") via e-mail
-- [ ] Confirmação de e-mail no cadastro
-- [ ] Rate limiting no login e no cadastro (evitar força bruta)
+- [X] Confirmação de e-mail no cadastro
+- [X] Rate limiting no login e no cadastro (evitar força bruta)
 - [ ] Validar tipo e tamanho máximo da foto de perfil no upload
 - [ ] Revisar permissões — garantir que só o dono do post pode editá-lo/excluí-lo (já existe no delete, replicar em qualquer edição futura)
 
@@ -53,7 +53,7 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 - [ ] Estado de "carregando..." no botão de curtir durante a requisição AJAX
 - [ ] Melhorar mensagens de erro de formulário (feedback mais claro pro usuário)
 - [ ] Revisar acessibilidade: contraste de cores, navegação por teclado, `aria-label`s em todos os botões de ícone
-
+- [ ] Paginar a parte de notícias na página `home`
 ---
 
 ## 🧪 Qualidade e infraestrutura

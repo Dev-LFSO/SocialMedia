@@ -17,6 +17,7 @@ Including another URLconf
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import login_view, logout_view, register, my_user, get_user, search_user, remove_profile_picture, remove_profile_picture, verify_email, resend_verification_email
+from django_ratelimit.decorators import ratelimit
 
 app_name = 'users'
 
@@ -24,11 +25,14 @@ urlpatterns = [
     path('register/', register, name='register'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
-    path('password_reset/', auth_views.PasswordResetView.as_view(
-        template_name='password_reset_form.html',
-        email_template_name='password_reset_email.html',
-        subject_template_name='password_reset_subject.txt',
-        success_url='/users/password_reset/done/',
+    path('password_reset/', ratelimit(key='ip', rate='3/m', method='POST', block=True)(
+        auth_views.PasswordResetView.as_view(
+            template_name='password_reset_form.html',
+            email_template_name='password_reset_email.html',
+            html_email_template_name='password_reset_email_html.html',
+            subject_template_name='password_reset_subject.txt',
+            success_url='/users/password_reset/done/',
+        )
     ), name='password_reset'),
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(
         template_name='password_reset_done.html',

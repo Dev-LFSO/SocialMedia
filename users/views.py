@@ -11,35 +11,43 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
+from django.utils.html import strip_tags
 from django.contrib import messages
 from posts.models import Post
 from .forms import UserRegisterForm, ProfileUpdateForm
+from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
 from .tokens import email_verification_token
 
 User = get_user_model()
 
 POSTS_POR_PAGINA = 10
 
-
 def _enviar_email_confirmacao(request, user):
     current_site = get_current_site(request)
     subject = 'Confirme seu e-mail - Social Media'
-    message = render_to_string('email_verification_email.html', {
+    context = {
         'user': user,
         'domain': current_site.domain,
         'protocol': 'https' if request.is_secure() else 'http',
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
         'token': email_verification_token.make_token(user),
-    })
-    EmailMessage(subject, message, to=[user.email]).send()
+    }
+    html_message = render_to_string('email_verification_email.html', context)
+    plain_message = strip_tags(html_message)
 
+    email = EmailMultiAlternatives(subject, plain_message, to=[user.email])
+    email.attach_alternative(html_message, "text/html")
+    email.send()
+
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
 def register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = False  # conta fica inativa até confirmar o e-mail
+            user.is_active = False
             user.save()
 
             _enviar_email_confirmacao(request, user)
@@ -48,6 +56,40 @@ def register(request):
     else:
         form = UserRegisterForm()
     return render(request, 'register.html', {'form': form})
+
+@ratelimit(key='ip', rate='10/m', method='POST', block=True)
+def login_view(request):
+    if request.user.is_authenticated:
+        if request.GET.get('next'):
+            return redirect(request.GET.get("next"))
+        return redirect('home')
+    if request.method == 'POST':
+        try:
+            email = request.POST.get('email')
+            password = request.POST.get('password')
+            user = authenticate(request, email=email, password=password)
+            if user:
+                login(request, user)
+                if request.user.is_authenticated:
+                    if request.GET.get('next'):
+                        return redirect(request.GET.get("next"))
+                    return redirect('home')
+            if User.objects.filter(email=email, is_active=False).exists():
+                return render(request, 'login.html', {
+                    'error': 'Sua conta ainda não foi confirmada. Verifique seu e-mail.',
+                    'email': email,
+                    'show_resend': True,
+                })
+            return render(request, 'login.html', {'error': 'Senha inválida', 'email': email})
+        except User.DoesNotExist:
+            return render(request, 'login.html', {'error': 'Credencias inválidas'})
+    return render(request, 'login.html')
+
+def logout_view(request):
+    logout(request)
+    if request.GET.get('next'):
+        return redirect(request.GET.get("next"))
+    return redirect('home')
 
 def verify_email(request, uidb64, token):
     try:
@@ -65,6 +107,7 @@ def verify_email(request, uidb64, token):
 
     return render(request, 'email_verification_invalid.html')
 
+@ratelimit(key='ip', rate='3/m', method='POST', block=True)
 def resend_verification_email(request):
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
@@ -75,40 +118,6 @@ def resend_verification_email(request):
             pass  # não revela se o e-mail existe ou não, por segurança
         return render(request, 'email_verification_sent.html', {'email': email})
     return render(request, 'resend_verification.html')
-
-def login_view(request):
-    if request.user.is_authenticated:
-        if request.GET.get('next'):
-            return redirect(request.GET.get("next"))
-        return redirect('home')
-    if request.method == 'POST':
-        try:
-            email = request.POST.get('email')
-            password = request.POST.get('password')
-            user = authenticate(request, email=email, password=password)
-            if user:
-                login(request, user)
-                if request.user.is_authenticated:
-                    if request.GET.get('next'):
-                        return redirect(request.GET.get("next"))
-                    return redirect('home')
-            # authenticate() retorna None tanto para senha errada quanto conta inativa
-            if User.objects.filter(email=email, is_active=False).exists():
-                return render(request, 'login.html', {
-                    'error': 'Sua conta ainda não foi confirmada. Verifique seu e-mail.',
-                    'email': email,
-                    'show_resend': True,
-                })
-            return render(request, 'login.html', {'error': 'Senha inválida', 'email': email})
-        except User.DoesNotExist:
-            return render(request, 'login.html', {'error': 'Credencias inválidas'})
-    return render(request, 'login.html')
-
-def logout_view(request):
-    logout(request)
-    if request.GET.get('next'):
-        return redirect(request.GET.get("next"))
-    return redirect('home')
 
 def search_user(request):
     query = request.GET.get('q', '').strip()
