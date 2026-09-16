@@ -22,6 +22,10 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'app-cache',
+    },
+    'ratelimit': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'ratelimit-cache',
     }
 }

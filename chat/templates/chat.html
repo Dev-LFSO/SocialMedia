@@ -68,20 +68,20 @@
                                     <span class="user-name">
                                         {{ conversa.other_user.username }}
                                     </span>
-                                    {% if conversa.last_message %}
-                                    <span class="message-time">{{ conversa.last_message.timestamp|date:"H:i" }}</span>
+                                    {% if conversa.cached_last_message %}
+                                    <span class="message-time">{{ conversa.cached_last_message.timestamp|date:"H:i" }}</span>
                                     {% endif %}
                                 </div>
                                 
                                 <div class="conversation-bottom">
-                                    {% if conversa.last_message %}
+                                    {% if conversa.cached_last_message %}
                                     <p class="last-message">
-                                        {% if conversa.last_message.sender == request.user %}
+                                        {% if conversa.cached_last_message.sender == request.user %}
                                         Você: 
                                         {% else %}
                                         {{ conversa.other_user.username }}:     
                                         {% endif %}
-                                        {{ conversa.last_message.content }}
+                                        {{ conversa.cached_last_message.content }}
                                     </p>
                                     {% else %}
                                     <p class="last-message">Nenhuma mensagem!</p>

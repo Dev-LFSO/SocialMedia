@@ -141,7 +141,13 @@ def search_user(request):
 @login_required(login_url='users:login')
 def get_user(request, username):
     user = get_object_or_404(User, username=username)
-    user_posts = Post.objects.filter(user=user).order_by('-data_posted')
+    likes_do_usuario = Post.likes.through.objects.filter(
+        post_id=OuterRef('pk'), user_id=request.user.id
+    )
+    user_posts = Post.objects.filter(user=user).select_related('user').annotate(
+        num_likes=Count('likes', distinct=True),
+        is_liked=Exists(likes_do_usuario),
+    )  # ordering já vem do Meta.ordering do modelo, não precisa repetir order_by
     data = {
         'profile_user': user,
         'user_posts': user_posts,
