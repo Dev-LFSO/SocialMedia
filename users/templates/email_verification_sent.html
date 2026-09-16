@@ -1,0 +1,14 @@
+{% extends "main.html" %}
+
+{% block content %}
+<main class="auth-main">
+    <div class="auth-card" style="text-align: center;">
+        <i class="fa-solid fa-envelope-circle-check fa-2x" style="color: var(--brand); margin-bottom: 8px;"></i>
+        <h1 class="title">Confirme seu e-mail</h1>
+        <p style="font-size: 14px; color: var(--ink-soft);">
+            Enviamos um link de confirmação para <strong>{{ email }}</strong>. Clique nele para ativar sua conta.
+        </p>
+        <a href="{% url 'users:login' %}" class="button-ghost" style="text-decoration: none; margin-top: 8px;">Voltar para o login</a>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,9 @@
+Olá {{ user.name|default:user.username }},
+
+Obrigado por se cadastrar no Social Media! Para ativar sua conta, confirme seu e-mail clicando no link abaixo:
+
+{{ protocol }}://{{ domain }}{% url 'users:verify_email' uidb64=uid token=token %}
+
+Se você não criou essa conta, pode ignorar este e-mail.
+
+Equipe Social Media

@@ -1,0 +1,13 @@
+{% extends "main.html" %}
+
+{% block content %}
+<main class="auth-main">
+    <div class="auth-card" style="text-align: center;">
+        <h1 class="title">Link inválido ou expirado</h1>
+        <div class="error">
+            <p>Esse link de confirmação não é mais válido.</p>
+        </div>
+        <a href="{% url 'users:resend_verification' %}" class="button-submit" style="text-decoration: none; display: inline-block; margin-top: 8px;">Reenviar e-mail de confirmação</a>
+    </div>
+</main>
+{% endblock %}

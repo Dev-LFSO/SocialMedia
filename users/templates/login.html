@@ -9,6 +9,9 @@
         {% if error %}
         <div class="error">
             <p>{{ error }}</p>
+            {% if show_resend %}
+                <a href="{% url 'users:resend_verification' %}" style="color: var(--danger); font-weight: 700; text-decoration: underline;">Reenviar e-mail de confirmação</a>
+            {% endif %}
         </div>
         {% endif %}
 
@@ -21,6 +24,10 @@
 
             <button type="submit" class="button-submit">Entrar</button>
         </div>
+
+        <a href="{% url 'users:password_reset' %}" class="link-back" style="margin-top: 4px; align-self: center;">
+            Esqueceu sua senha?
+        </a>
     </form>
 </main>
 {% endblock %}

@@ -3,6 +3,9 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
+MAX_PROFILE_PICTURE_SIZE_MB = 5
+ALLOWED_PROFILE_PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+ALLOWED_PROFILE_PICTURE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
 
 def validate_cpf(value):
     cpf = re.sub(r'\D', '', value)
@@ -20,6 +23,28 @@ def validate_cpf(value):
     if cpf[-2:] != f'{d1}{d2}':
         raise ValidationError('CPF inválido.')
 
+def validate_profile_picture(file):
+    # 1. Valida o tamanho máximo do arquivo
+    max_size_bytes = MAX_PROFILE_PICTURE_SIZE_MB * 1024 * 1024
+    if file.size > max_size_bytes:
+        raise ValidationError(
+            f'A imagem não pode ultrapassar {MAX_PROFILE_PICTURE_SIZE_MB}MB '
+            f'(tamanho atual: {file.size / (1024 * 1024):.1f}MB).'
+        )
+
+    # 2. Valida o tipo MIME real do arquivo (não confia só na extensão)
+    content_type = getattr(file, 'content_type', None)
+    if content_type and content_type not in ALLOWED_PROFILE_PICTURE_TYPES:
+        raise ValidationError(
+            'Formato de imagem inválido. Envie um arquivo JPG, PNG ou WEBP.'
+        )
+
+    # 3. Valida a extensão do nome do arquivo como camada extra
+    nome = file.name.lower()
+    if not any(nome.endswith(ext) for ext in ALLOWED_PROFILE_PICTURE_EXTENSIONS):
+        raise ValidationError(
+            'Extensão de arquivo inválida. Use .jpg, .jpeg, .png ou .webp.'
+        )
 
 def profile_picture_path(instance, filename):
     ext = filename.split('.')[-1]
@@ -52,6 +77,7 @@ class User(AbstractUser):
     city = models.CharField('Cidade', max_length=100, blank=True)
     profile_picture = models.ImageField(
         'Foto de perfil', upload_to=profile_picture_path, blank=True, null=True,
+        validators=[validate_profile_picture],
     )
 
     USERNAME_FIELD = 'email'
