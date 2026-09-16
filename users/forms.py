@@ -21,6 +21,9 @@ class ProfileUpdateForm(forms.ModelForm):
             'name', 'username', 'email', 'cpf', 
             'bio', 'city', 'state', 'country', 'profile_picture'
         ]
+        widgets = {
+            'profile_picture': forms.ClearableFileInput(attrs={'accept': 'image/jpeg,image/png,image/webp'}),
+        }
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             choices = list(self.fields['state'].choices)

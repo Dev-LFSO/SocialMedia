@@ -21,8 +21,8 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 - [x] Recuperação de senha ("Esqueci minha senha") via e-mail
 - [X] Confirmação de e-mail no cadastro
 - [X] Rate limiting no login e no cadastro (evitar força bruta)
-- [ ] Validar tipo e tamanho máximo da foto de perfil no upload
-- [ ] Revisar permissões — garantir que só o dono do post pode editá-lo/excluí-lo (já existe no delete, replicar em qualquer edição futura)
+- [X] Validar tipo e tamanho máximo da foto de perfil no upload
+- [X] Revisar permissões — garantir que só o dono do post pode editá-lo/excluí-lo (já existe no delete, replicar em qualquer edição futura)
 
 ---
 
