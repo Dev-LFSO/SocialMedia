@@ -12,7 +12,7 @@
         <div class="profile-header-card">
             <div class="profile-avatar-wrapper">
                 {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="Foto de {{ user.name }}" class="profile-avatar">
+                    <img src="{{ user.profile_picture.url }}" alt="Foto de {{ user.name }}" loading="lazy" class="profile-avatar">
                 {% else %}
                     <div class="profile-avatar-placeholder">
                         <i class="fa-solid fa-user"></i>

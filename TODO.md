@@ -30,8 +30,8 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 
 - [X] `select_related` / `prefetch_related` nas queries de posts (usuário, likes)
 - [X] Cache do painel "Mais Curtidos" (ex: `cache_page` ou cache manual por alguns minutos)
-- [ ] Lazy loading de imagens (fotos de perfil, futuras imagens de post)
-- [ ] Compressão de arquivos estáticos (CSS/JS) em produção
+- [X] Lazy loading de imagens (fotos de perfil, futuras imagens de post)
+- [X] Compressão de arquivos estáticos (CSS/JS) em produção
 
 ---
 

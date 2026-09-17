@@ -54,7 +54,7 @@
                             
                             <div class="avatar-wrapper avatar-sm">
                                 {% if conversa.other_user.profile_picture %}
-                                    <img src="{{ conversa.other_user.profile_picture.url }}" alt="{{ conversa.other_user.username }}" class="avatar-img">
+                                    <img src="{{ conversa.other_user.profile_picture.url }}" alt="{{ conversa.other_user.username }}" loading="lazy" class="avatar-img">
                                 {% else %}
                                     <div class="profile-avatar-placeholder">
                                         <i class="fa-solid fa-user"></i>
@@ -113,7 +113,7 @@
                         <div class="chat-header-user">
                             <div class="avatar-wrapper avatar-sm">
                                 {% if active_conversation.other_user.profile_picture %}
-                                    <img src="{{ active_conversation.other_user.profile_picture.url }}" alt="{{ active_conversation.other_user.username }}" class="avatar-img">
+                                    <img src="{{ active_conversation.other_user.profile_picture.url }}" alt="{{ active_conversation.other_user.username }}" loading="lazy" class="avatar-img">
                                 {% else %}
                                     <div class="profile-avatar-placeholder">
                                         <i class="fa-solid fa-user"></i>
@@ -156,7 +156,7 @@
                                     <div class="message-group incoming">
                                         <div class="avatar-wrapper avatar-xs" style="align-self: flex-end;">
                                             {% if active_conversation.other_user.profile_picture %}
-                                                <img src="{{ active_conversation.other_user.profile_picture.url }}" alt="{{ active_conversation.other_user.username }}" class="avatar-img">
+                                                <img src="{{ active_conversation.other_user.profile_picture.url }}" alt="{{ active_conversation.other_user.username }}" loading="lazy" class="avatar-img">
                                             {% else %}
                                                 <div class="profile-avatar-placeholder">
                                                     <i class="fa-solid fa-user"></i>
