@@ -2,14 +2,36 @@
 
 {% block content %}
 <main class="auth-main">
-    <div class="auth-card">
-        <h1 class="title">Criar Conta</h1>
-        
-        <form method="POST">
+    <section class="auth-card auth-card--register" aria-labelledby="register-title">
+        <header class="auth-card__header" style="background-color: white;">
+            <h1 id="register-title" class="auth-card__title">Criar conta</h1>
+            <p class="auth-card__description">
+                Preencha os dados abaixo para começar.
+            </p>
+        </header>
+
+        <form method="post" class="auth-form auth-form--register" novalidate>
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Cadastrar</button>
+
+            {% if form.non_field_errors %}
+                <div class="form-feedback form-feedback--error" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    <div>{{ form.non_field_errors }}</div>
+                </div>
+            {% endif %}
+
+            {% for field in form %}
+                {% include "partials/form_field.html" with field=field %}
+            {% endfor %}
+
+            <button type="submit" class="button-submit">Criar conta</button>
         </form>
-    </div>
+
+        <nav class="auth-card__links" aria-label="Opções de cadastro">
+            <a href="{% url 'users:login' %}" class="auth-card__link">
+                Já tem uma conta? Entrar
+            </a>
+        </nav>
+    </section>
 </main>
 {% endblock %}

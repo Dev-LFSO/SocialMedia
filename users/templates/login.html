@@ -2,32 +2,46 @@
 
 {% block content %}
 <main class="auth-main">
-    <form method="post" class="auth-card">
-        {% csrf_token %}
-        <h1 class="title">Entrar</h1>
+    <section class="auth-card auth-card--login" aria-labelledby="login-title">
+        <header class="auth-card__header" style="background-color: white;">
+            <h1 id="login-title" class="auth-card__title">Entrar</h1>
+            <p class="auth-card__description">
+                Informe seus dados para acessar sua conta.
+            </p>
+        </header>
 
-        {% if error %}
-        <div class="error">
-            <p>{{ error }}</p>
-            {% if show_resend %}
-                <a href="{% url 'users:resend_verification' %}" style="color: var(--danger); font-weight: 700; text-decoration: underline;">Reenviar e-mail de confirmação</a>
+        <form method="post" class="auth-form auth-form--login" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-feedback form-feedback--error" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    <div>{{ form.non_field_errors }}</div>
+                </div>
             {% endif %}
-        </div>
-        {% endif %}
 
-        <div class="inputs">
-            <label for="email">Email</label>
-            <input type="text" id="email" class="input-email" name="email" autocomplete="off" placeholder="email@gmail.com" required value="{{ email }}">
-
-            <label for="password">Senha</label>
-            <input type="password" id="password" class="input-password" name="password" autocomplete="off" required>
+            {% for field in form %}
+                {% include "partials/form_field.html" with field=field %}
+            {% endfor %}
 
             <button type="submit" class="button-submit">Entrar</button>
-        </div>
+        </form>
 
-        <a href="{% url 'users:password_reset' %}" class="link-back" style="margin-top: 4px; align-self: center;">
-            Esqueceu sua senha?
-        </a>
-    </form>
+        <nav class="auth-card__links" aria-label="Opções de acesso">
+            {% if show_resend %}
+                <a href="{% url 'users:resend_verification' %}" class="auth-card__link">
+                    Reenviar e-mail de confirmação
+                </a>
+            {% endif %}
+
+            <a href="{% url 'users:password_reset' %}" class="auth-card__link">
+                Esqueceu sua senha?
+            </a>
+
+            <a href="{% url 'users:register' %}" class="auth-card__link">
+                Ainda não tem conta? Cadastre-se
+            </a>
+        </nav>
+    </section>
 </main>
 {% endblock %}

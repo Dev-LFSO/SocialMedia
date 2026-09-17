@@ -25,26 +25,20 @@
                 </div>
                 {% endif %}
 
-                <div class="inputs">
-                    <label for="title">Título</label>
-                    <input
-                        type="text"
-                        id="title"
-                        name="title"
-                        maxlength="200"
-                        placeholder="Do que você quer falar?"
-                        autocomplete="off"
-                        required>
-                    <span class="field-hint" id="title-counter">0/200</span>
+                {% if form.non_field_errors %}
+                    <div class="form-feedback form-feedback--error" role="alert">
+                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                        <div>{{ form.non_field_errors }}</div>
+                    </div>
+                {% endif %}
 
-                    <label for="content">Conteúdo</label>
-                    <textarea
-                        id="content"
-                        name="content"
-                        rows="8"
-                        placeholder="Escreva o que estiver pensando..."
-                        required></textarea>
-                </div>
+                {% for field in form %}
+                    {% include "partials/form_field.html" with field=field %}
+
+                    {% if field.name == "title" %}
+                        <span class="field-hint" id="title-counter">0/200</span>
+                    {% endif %}
+                {% endfor %}
 
                 <div class="compose-card__actions">
                     <a href="{% url "posts:all_posts" %}" class="button-ghost">Cancelar</a>

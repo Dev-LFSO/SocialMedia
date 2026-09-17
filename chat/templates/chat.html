@@ -15,27 +15,44 @@
                 <div class="chat-sidebar-header">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h2 style="margin: 0;"><i class="fa-solid fa-comments"></i> Mensagens</h2>
-                        <button type="button" class="btn-new-chat" id="openNewChatModal" title="Nova conversa">
-                            <i class="fa-solid fa-pen-to-square"></i>
+                        <button
+                            type="button"
+                            class="btn-new-chat"
+                            id="openNewChatModal"
+                            aria-label="Iniciar nova conversa"
+                            title="Nova conversa">
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                         </button>
                     </div>
                     <div class="chat-search-box">
                         <i class="fa-solid fa-magnifying-glass"></i>
+                        <label class="sr-only" for="searchChatInput">Buscar conversa</label>
                         <input type="text" id="searchChatInput" placeholder="Buscar conversa...">
                     </div>
                 </div>
 
-                <div id="newChatModal" class="modal-overlay">
+                <div id="newChatModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="new-chat-modal-title">
                     <div class="modal-card">
                         <div class="modal-header">
-                            <h3>Iniciar nova conversa</h3>
-                            <button type="button" class="modal-close-btn" id="closeNewChatModal">&times;</button>
+                            <h3 id="new-chat-modal-title">Iniciar nova conversa</h3>
+                            <button
+                                type="button"
+                                class="modal-close-btn"
+                                id="closeNewChatModal"
+                                aria-label="Fechar janela de nova conversa">
+                                &times;
+                            </button>
                         </div>
                         
                         <div class="modal-body">
                             <div class="chat-search-box" style="margin-bottom: 16px;">
                                 <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="newChatSearchInput" placeholder="Digite o username e aperte Enter..." autocomplete="off">
+                                <label class="sr-only" for="newChatSearchInput">Buscar usuário</label>
+                                <input
+                                    type="text"
+                                    id="newChatSearchInput"
+                                    placeholder="Digite o username e aperte Enter..."
+                                    autocomplete="off">
                             </div>
 
                             <!-- RESULTADOS DA BUSCA -->
@@ -90,11 +107,13 @@
                             </div>
 
                             <!-- BOTÃO DE EXCLUIR CONVERSA -->
-                            <button type="button" 
-                                    class="delete-conversation-btn" 
-                                    data-url="{% url 'chat:delete_chat' conversation_id=conversa.id %}" 
-                                    title="Excluir conversa">
-                                <i class="fa-solid fa-trash-can"></i>
+                            <button
+                                type="button"
+                                class="delete-conversation-btn"
+                                data-url="{% url 'chat:delete_chat' conversation_id=conversa.id %}"
+                                aria-label="Excluir conversa com {{ conversa.other_user.username }}"
+                                title="Excluir conversa">
+                                <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                             </button>
                         </a>
                     {% endfor %}
@@ -189,8 +208,12 @@
                                 <textarea id="messageInput" name="content" placeholder="Digite uma mensagem..." rows="1" required></textarea>
                             </div>
 
-                            <button type="submit" class="chat-send-btn" title="Enviar mensagem">
-                                <i class="fa-solid fa-paper-plane"></i>
+                            <button
+                                type="submit"
+                                class="chat-send-btn"
+                                aria-label="Enviar mensagem"
+                                title="Enviar mensagem">
+                                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
                             </button>
                         </form>
                     </footer>
@@ -215,6 +238,14 @@
 </main>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
+$(document).on('keydown', function (e) {
+    const $modal = $('#newChatModal');
+
+    if (e.key === 'Escape' && $modal.hasClass('active')) {
+        $modal.removeClass('active');
+        $('#openNewChatModal').focus();
+    }
+});
 function renderChatSkeleton() {
     var skeletonHtml = `
         <header class="chat-header">

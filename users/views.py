@@ -15,7 +15,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils.html import strip_tags
 from django.contrib import messages
 from posts.models import Post
-from .forms import UserRegisterForm, ProfileUpdateForm
+from .forms import LoginForm, ProfileUpdateForm, UserRegisterForm
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from .tokens import email_verification_token
@@ -53,37 +53,52 @@ def register(request):
             _enviar_email_confirmacao(request, user)
 
             return render(request, 'email_verification_sent.html', {'email': user.email})
+        print(form.error_messages)
+        return render(request, 'register.html', {
+            'form': form,
+        }, status=400)
     else:
         form = UserRegisterForm()
-    return render(request, 'register.html', {'form': form})
+        return render(request, 'register.html', {'form': form})
 
 @ratelimit(key='ip', rate='10/m', method='POST', block=True)
+@ratelimit(key="ip", rate="10/m", method="POST", block=True)
 def login_view(request):
     if request.user.is_authenticated:
-        if request.GET.get('next'):
-            return redirect(request.GET.get("next"))
-        return redirect('home')
-    if request.method == 'POST':
-        try:
-            email = request.POST.get('email')
-            password = request.POST.get('password')
-            user = authenticate(request, email=email, password=password)
-            if user:
-                login(request, user)
-                if request.user.is_authenticated:
-                    if request.GET.get('next'):
-                        return redirect(request.GET.get("next"))
-                    return redirect('home')
-            if User.objects.filter(email=email, is_active=False).exists():
-                return render(request, 'login.html', {
-                    'error': 'Sua conta ainda não foi confirmada. Verifique seu e-mail.',
-                    'email': email,
-                    'show_resend': True,
-                })
-            return render(request, 'login.html', {'error': 'Senha inválida', 'email': email})
-        except User.DoesNotExist:
-            return render(request, 'login.html', {'error': 'Credencias inválidas'})
-    return render(request, 'login.html')
+        return redirect(request.GET.get("next") or "home")
+
+    form = LoginForm(request.POST or None)
+    show_resend = False
+
+    if request.method == "POST" and form.is_valid():
+        email = form.cleaned_data["email"]
+        password = form.cleaned_data["password"]
+        user = authenticate(request, email=email, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect(request.GET.get("next") or "home")
+
+        if User.objects.filter(email=email, is_active=False).exists():
+            form.add_error(
+                None,
+                "Sua conta ainda não foi confirmada. Verifique seu e-mail ou solicite um novo link.",
+            )
+            show_resend = True
+        else:
+            form.add_error(
+                None,
+                "E-mail ou senha incorretos. Confira os dados e tente novamente.",
+            )
+
+    return render(
+        request,
+        "login.html",
+        {
+            "form": form,
+            "show_resend": show_resend,
+        },
+    )
 
 def logout_view(request):
     logout(request)
@@ -154,29 +169,43 @@ def get_user(request, username):
     }
     return render(request, 'user.html', data)
 
+@never_cache
 @login_required(login_url='users:login')
 def my_user(request):
     user = request.user
 
-    posts_list = Post.objects.filter(user=user).order_by('-data_posted', '-id')
+    likes_do_usuario = Post.likes.through.objects.filter(
+        post_id=OuterRef('pk'),
+        user_id=user.id,
+    )
+
+    posts_list = (
+        Post.objects.filter(user=user)
+        .select_related('user')
+        .annotate(
+            num_likes=Count('likes', distinct=True),
+            is_liked=Exists(likes_do_usuario),
+        )
+        .order_by('-data_posted', '-id')
+    )
+
     paginator = Paginator(posts_list, POSTS_POR_PAGINA)
     page_number = request.GET.get('page')
     posts = paginator.get_page(page_number)
 
     if request.method == 'POST':
-        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             form.save()
             return redirect('users:my_user')
     else:
-        form = ProfileUpdateForm(instance=request.user)
+        form = ProfileUpdateForm(instance=user)
 
-    data = {
+    return render(request, 'my_user.html', {
         'form': form,
         'user': user,
         'posts': posts,
-    }
-    return render(request, 'my_user.html', data)
+    })
 
 @login_required
 @require_POST

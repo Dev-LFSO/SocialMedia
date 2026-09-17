@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.template.loader import render_to_string
 from django.urls import reverse
 from .models import Post
+from .forms import PostCreateForm
 from django.db.models import Count, Q, Exists, OuterRef
 from django.http import JsonResponse
 
@@ -91,15 +92,20 @@ def goto_post(request, post_id):
     url = f"{reverse('posts:all_posts')}?page={pagina}#{post.id}"
     return redirect(url)
 
-@login_required(login_url='users:login')
+@login_required(login_url="users:login")
 def create_post(request):
-    if request.method == "GET":
-        return render(request, 'create_post.html')
-    elif request.method == "POST":
-        title = request.POST.get("title")
-        content = request.POST.get("content")
-        Post.objects.create(title=title, content=content, user=request.user)
-        return redirect("posts:all_posts")
+    if request.method == "POST":
+        form = PostCreateForm(request.POST)
+
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.user = request.user
+            post.save()
+            return redirect("posts:all_posts")
+    else:
+        form = PostCreateForm()
+
+    return render(request, "create_post.html", {"form": form})
 
 @login_required(login_url='users:login')
 def delete_post(request, post_id):
