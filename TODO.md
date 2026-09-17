@@ -43,13 +43,13 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 - [ ] **Reações além do like** (❤️ 😂 😮 😢, por exemplo)
 - [ ] **Posts salvos/favoritos** (marcar pra ler depois)
 - [ ] **Modo escuro** (dark mode)
-
+- [X] **Mais Curtidos > 0**, manter apenas posts no mais curtidos com mais de 0 curtidas
 ---
 
 ## 🎨 UX / Design
 
-- [ ] Loading skeleton enquanto o feed carrega (em vez de tela em branco)
-- [ ] Infinite scroll como alternativa à paginação numerada (ou as duas, à escolha do usuário)
+- [X] Loading skeleton enquanto o feed carrega (em vez de tela em branco)
+- [X] Infinite scroll como alternativa à paginação numerada (ou as duas, à escolha do usuário)
 - [ ] Estado de "carregando..." no botão de curtir durante a requisição AJAX
 - [ ] Melhorar mensagens de erro de formulário (feedback mais claro pro usuário)
 - [ ] Revisar acessibilidade: contraste de cores, navegação por teclado, `aria-label`s em todos os botões de ícone

@@ -1,0 +1,23 @@
+{% for post in posts %}
+<article class="post-card" id="{{ post.id }}">
+    <h2 class="post-card__title">{{ post.title }}</h2>
+    <p class="post-card__meta">Publicado por <a href="{% url 'users:get_user' post.user.username %}"><strong>{{ post.user.username }}</strong></a> · {{ post.data_posted|date:"H:i  d/m/Y" }}</p>
+    <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
+
+    {% if user.is_authenticated %}
+    <button type="button" 
+            class="like-btn" 
+            data-url="{% url 'posts:like_post' post.id %}" 
+            data-post-id="{{ post.id }}"
+            aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}" 
+            aria-label="Curtir post">
+        <i class="fa-solid fa-heart"></i>
+        <span class="like-count">{{ post.num_likes }}</span>
+    </button>
+    {% endif %}
+</article>
+{% empty %}
+<div class="empty-state">
+    <p>Ainda não há posts por aqui. Seja o primeiro a publicar!</p>
+</div>
+{% endfor %}

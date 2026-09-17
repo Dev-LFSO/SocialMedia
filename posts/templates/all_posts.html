@@ -4,47 +4,38 @@
 <main>
     {% include "sidebar.html" %}
 
-    <section class="feed">
-        {% for post in posts %}
-        <article class="post-card" id="{{ post.id }}">
-            <h2 class="post-card__title">{{ post.title }}</h2>
-            <p class="post-card__meta">Publicado por <a href="{% url 'users:get_user' post.user.username %}"><strong>{{ post.user.username }}</strong></a> · {{ post.data_posted|date:"H:i  d/m/Y" }}</p>
-            <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
-
-            {% if user.is_authenticated %}
-            <button type="button" 
-                    class="like-btn" 
-                    data-url="{% url 'posts:like_post' post.id %}" 
-                    data-post-id="{{ post.id }}"
-                    aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}"
-                    aria-label="Curtir post">
-                <i class="fa-solid fa-heart"></i>
-                <span class="like-count">{{ post.num_likes }}</span>
-            </button>
-            {% endif %}
-        </article>
-        {% empty %}
-        <div class="empty-state">
-            <p>Ainda não há posts por aqui. Seja o primeiro a publicar!</p>
-        </div>
-        {% endfor %}
-
-        {% if posts.paginator.num_pages > 1 %}
-        <nav class="pagination" aria-label="Navegação de páginas">
-            {% if posts.has_previous %}
-                <a href="?page=1" class="pagination__btn" aria-label="Primeira página"><i class="fa-solid fa-angles-left"></i></a>
-                <a href="?page={{ posts.previous_page_number }}" class="pagination__btn" aria-label="Página anterior"><i class="fa-solid fa-angle-left"></i></a>
-            {% endif %}
-
-            <span class="pagination__status">Página {{ posts.number }} de {{ posts.paginator.num_pages }}</span>
-
-            {% if posts.has_next %}
-                <a href="?page={{ posts.next_page_number }}" class="pagination__btn" aria-label="Próxima página"><i class="fa-solid fa-angle-right"></i></a>
-                <a href="?page={{ posts.paginator.num_pages }}" class="pagination__btn" aria-label="Última página"><i class="fa-solid fa-angles-right"></i></a>
-            {% endif %}
-        </nav>
-        {% endif %}
+    <section class="feed" id="feed">
+        {% include "partials/posts_feed.html" %}
     </section>
+
+    <!-- Sentinela: quando este elemento entra na viewport, carrega a próxima página -->
+    <div id="infinite-scroll-sentinel" style="height: 1px;"></div>
+
+    <!-- Skeleton exibido enquanto a próxima página carrega -->
+    <div id="infinite-scroll-skeleton" style="display: none;">
+        <div class="skeleton-post-card" style="margin-top: 16px;">
+            <div class="skeleton skeleton-line--title"></div>
+            <div class="skeleton skeleton-line--meta"></div>
+            <div class="skeleton skeleton-line skeleton-line--full"></div>
+            <div class="skeleton skeleton-line skeleton-line--80"></div>
+        </div>
+    </div>
+
+    {% if posts.paginator.num_pages > 1 %}
+    <nav class="pagination" id="numbered-pagination" aria-label="Navegação de páginas">
+        {% if posts.has_previous %}
+            <a href="?page=1" class="pagination__btn" aria-label="Primeira página"><i class="fa-solid fa-angles-left"></i></a>
+            <a href="?page={{ posts.previous_page_number }}" class="pagination__btn" aria-label="Página anterior"><i class="fa-solid fa-angle-left"></i></a>
+        {% endif %}
+
+        <span class="pagination__status">Página {{ posts.number }} de {{ posts.paginator.num_pages }}</span>
+
+        {% if posts.has_next %}
+            <a href="?page={{ posts.next_page_number }}" class="pagination__btn" aria-label="Próxima página"><i class="fa-solid fa-angle-right"></i></a>
+            <a href="?page={{ posts.paginator.num_pages }}" class="pagination__btn" aria-label="Última página"><i class="fa-solid fa-angles-right"></i></a>
+        {% endif %}
+    </nav>
+    {% endif %}
 
     <aside class="trending">
         <h1 class="panel-title">Mais curtidos</h1>
@@ -66,88 +57,36 @@
         </div>
     </aside>
 </main>
+<script src="{% static "js/script.js" %}"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 
+var currentPage = {{ posts.number }};
+var hasNextPage = {% if posts.has_next %}true{% else %}false{% endif %};
+var carregandoProximaPagina = false;
+
 function incrementarTextoCurtidas(texto, value) {
     var quantidadeAtual = parseInt(texto, 10);
-    
     if (isNaN(quantidadeAtual)) return texto;
-
     var novaQuantidade = quantidadeAtual + value;
     return novaQuantidade + ' curtidas';
 }
 
-$(document).ready(function() {
+function atualizarTrendingItem(postId, estaCurtido) {
+    $('.trending-item').each(function (index, elemento) {
+        var $link = $(elemento).find('a');
+        var href = $link.attr('href');
 
-    // 1. FUNÇÃO AUXILIAR: Atualiza o texto na lista Trending
-    function atualizarTrendingItem(postId, estaCurtido) {
-        $('.trending-item').each(function (index, elemento) { 
-            var $link = $(elemento).find('a');
-            var href = $link.attr('href');
-
-            // Verifica se o link do item trending contém o ID do post
-            if (href && href.includes(postId)) {
-                var $primeiraLi = $(elemento).find('ul li').first();
-                var textoAtual = $primeiraLi.text();
-                
-                // Se curtiu passa +1, se descurtiu passa -1
-                var delta = estaCurtido ? 1 : -1;
-                var novoTexto = incrementarTextoCurtidas(textoAtual, delta);
-                
-                $primeiraLi.text(novoTexto);
-            }
-        });
-    }
-
-    // 2. EVENTO: Clique no botão de curtir
-    $('.like-btn').on('click', function() {
-        const $btn = $(this);
-        const $count = $btn.find('.like-count');
-        
-        const likeUrl = $btn.data('url');
-        const postId = $btn.data('post-id'); // Pega o ID do post direto do data-post-id
-
-        // Pega o estado atual e calcula o novo estado
-        const isLiked = $btn.attr('aria-pressed') === 'true';
-        const newLikedState = !isLiked;
-        let currentLikes = parseInt($count.text()) || 0;
-
-        // ----------------------------------------------------
-        // ATUALIZAÇÃO OTIMISTA (Muda tudo instantaneamente)
-        // ----------------------------------------------------
-        
-        // A) Atualiza o visual do botão principal
-        $btn.attr('aria-pressed', newLikedState);
-        $count.text(newLikedState ? currentLikes + 1 : currentLikes - 1);
-
-        // B) Atualiza a lista Trending imediatamente
-        atualizarTrendingItem(postId, newLikedState);
-
-        // ----------------------------------------------------
-        // REQUISIÇÃO EM SEGUNDO PLANO
-        // ----------------------------------------------------
-        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
-
-        $.ajax({
-            url: likeUrl,
-            type: "POST",
-            headers: { 
-                "X-CSRFToken": csrfToken 
-            },
-            dataType: "json",
-            error: function(xhr, status, error) {
-                $btn.attr('aria-pressed', isLiked);
-                $count.text(currentLikes);
-                atualizarTrendingItem(postId, isLiked);
-                showToast('Erro ao registrar curtida. Tente novamente.', 'error');
-            }
-        });
+        if (href && href.includes(postId)) {
+            var $primeiraLi = $(elemento).find('ul li').first();
+            var textoAtual = $primeiraLi.text();
+            var delta = estaCurtido ? 1 : -1;
+            var novoTexto = incrementarTextoCurtidas(textoAtual, delta);
+            $primeiraLi.text(novoTexto);
+        }
     });
+}
 
-});
-
-// Função utilitária para capturar o cookie do CSRF
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -162,5 +101,89 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function carregarProximaPagina() {
+    if (!hasNextPage || carregandoProximaPagina) return;
+
+    carregandoProximaPagina = true;
+    $('#infinite-scroll-skeleton').show();
+
+    $.ajax({
+        url: window.location.pathname,
+        type: 'GET',
+        data: { page: currentPage + 1 },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function (data) {
+            $('#feed').append(data.html);
+            currentPage += 1;
+            hasNextPage = data.has_next;
+        },
+        error: function () {
+            showToast('Erro ao carregar mais posts. Tente novamente.', 'error');
+        },
+        complete: function () {
+            carregandoProximaPagina = false;
+            $('#infinite-scroll-skeleton').hide();
+        }
+    });
+}
+
+$(document).ready(function () {
+
+    // A paginação numerada some quando JS está ativo — o infinite scroll assume,
+    // mas o link continua funcionando normalmente pra quem acessa sem JS (progressive enhancement)
+    if (hasNextPage || currentPage > 1) {
+        $('#numbered-pagination').hide();
+    }
+
+    // Observa a sentinela: quando ela entra na tela, carrega mais posts
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                carregarProximaPagina();
+            }
+        });
+    }, { rootMargin: '200px' }); // começa a carregar um pouco antes de chegar ao fim
+
+    var sentinela = document.getElementById('infinite-scroll-sentinel');
+    if (sentinela) observer.observe(sentinela);
+
+    // Handler de like DELEGADO — funciona também nos posts carregados via infinite scroll
+    $(document).on('click', '.like-btn', function() {
+        const $btn = $(this);
+        const $count = $btn.find('.like-count');
+
+        const likeUrl = $btn.data('url');
+        const postId = $btn.data('post-id');
+
+        const isLiked = $btn.attr('aria-pressed') === 'true';
+        const newLikedState = !isLiked;
+        let currentLikes = parseInt($count.text()) || 0;
+
+        $btn.attr('aria-pressed', newLikedState);
+        $count.text(newLikedState ? currentLikes + 1 : currentLikes - 1);
+
+        atualizarTrendingItem(postId, newLikedState);
+
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+
+        $.ajax({
+            url: likeUrl,
+            type: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken
+            },
+            dataType: "json",
+            error: function(xhr, status, error) {
+                $btn.attr('aria-pressed', isLiked);
+                $count.text(currentLikes);
+                atualizarTrendingItem(postId, isLiked);
+                showToast('Erro ao registrar curtida. Tente novamente.', 'error');
+            }
+        });
+    });
+
+});
 </script>
 {% endblock %}

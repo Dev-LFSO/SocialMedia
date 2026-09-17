@@ -215,6 +215,33 @@
 </main>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
+function renderChatSkeleton() {
+    var skeletonHtml = `
+        <header class="chat-header">
+            <div class="chat-header-user">
+                <div class="skeleton skeleton-avatar"></div>
+                <div class="header-user-details">
+                    <div class="skeleton skeleton-line" style="width: 120px; height: 15px; margin-bottom: 6px;"></div>
+                    <div class="skeleton skeleton-line" style="width: 80px; height: 11px; margin-bottom: 0;"></div>
+                </div>
+            </div>
+        </header>
+        <div class="messages-container">
+            <div class="skeleton-message incoming">
+                <div class="skeleton skeleton-avatar" style="width: 28px; height: 28px;"></div>
+                <div class="skeleton"></div>
+            </div>
+            <div class="skeleton-message outgoing">
+                <div class="skeleton"></div>
+            </div>
+            <div class="skeleton-message incoming">
+                <div class="skeleton skeleton-avatar" style="width: 28px; height: 28px;"></div>
+                <div class="skeleton" style="width: 220px;"></div>
+            </div>
+        </div>
+    `;
+    $('.chat-main-window').html(skeletonHtml);
+}
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -242,61 +269,45 @@ $(document).on('keydown', '#messageInput', function (e) {
         }
     }
 });
-$(document).ready(function () {
+$(document).on('click', '.conversation-item', function (e) {
+    e.preventDefault();
 
-    // Clique na conversa da barra lateral
-    $(document).on('click', '.conversation-item', function (e) {
-        e.preventDefault(); // Impede o recarregamento total da página
+    var $clickedItem = $(this);
+    var targetUrl = $clickedItem.attr('href');
 
-        var $clickedItem = $(this);
-        var targetUrl = $clickedItem.attr('href');
+    if (!targetUrl || targetUrl === '#') return;
 
-        if (!targetUrl || targetUrl === '#') return;
+    $('.conversation-item').removeClass('active');
+    $clickedItem.addClass('active');
 
-        // Destaque visual da conversa selecionada
-        $('.conversation-item').removeClass('active');
-        $clickedItem.addClass('active');
+    renderChatSkeleton(); // Mostra o skeleton imediatamente
 
-        var $mainWindow = $('.chat-main-window');
-        $mainWindow.css('opacity', '0.5'); // Efeito visual de carregamento
+    $.ajax({
+        url: targetUrl,
+        type: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function (data) {
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(data, 'text/html');
+            var newChatElement = doc.querySelector('.chat-main-window');
 
-        // Requisição AJAX para buscar a conversa
-        $.ajax({
-            url: targetUrl,
-            type: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            success: function (data) {
-                // 1. Usa o DOMParser nativo do navegador para ler o HTML completo retornado
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(data, 'text/html');
-                
-                // 2. Procura pela div/section .chat-main-window no HTML carregado
-                var newChatElement = doc.querySelector('.chat-main-window');
+            if (newChatElement) {
+                $('.chat-main-window').html(newChatElement.innerHTML);
+                window.history.pushState({ path: targetUrl }, '', targetUrl);
 
-                if (newChatElement) {
-                    // 3. Substitui o conteúdo da tela pelo novo chat
-                    $mainWindow.html(newChatElement.innerHTML);
-
-                    // 4. Atualiza a URL no navegador sem dar F5
-                    window.history.pushState({ path: targetUrl }, '', targetUrl);
-
-                    // 5. Rola a caixa de mensagens para o final
-                    if (typeof scrollToBottom === 'function') {
-                        scrollToBottom();
-                    }
-                } else {
-                    console.error("Classe .chat-main-window não encontrada no HTML retornado.");
-                    window.location.href = targetUrl; // Fallback se não encontrar
+                if (typeof scrollToBottom === 'function') {
+                    scrollToBottom();
                 }
-                $mainWindow.css('opacity', '1');
-            },
-            error: function (xhr) {
-                console.error('Erro ao excluir conversa:', xhr);
-                showToast('Não foi possível excluir a conversa. Tente novamente.', 'error');
+            } else {
+                console.error("Classe .chat-main-window não encontrada no HTML retornado.");
+                window.location.href = targetUrl;
             }
-        });
+        },
+        error: function (xhr, status, error) {
+            console.error("Erro na requisição AJAX:", error);
+            window.location.href = targetUrl;
+        }
     });
-
 });
 $(document).ready(function () {
     const $messagesContainer = $('#messagesContainer');

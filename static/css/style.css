@@ -135,7 +135,7 @@ button {
 }
 
 /* ==========================================================================
-   4. LAYOUT & CONTAINER PRINCIPAL
+   4. LAYOUT PRINCIPAL
    ========================================================================== */
 .container {
     max-width: 1100px;
@@ -169,6 +169,28 @@ main,
     grid-column: 2 / -1;
 }
 
+/*
+ * Página principal de posts:
+ * sidebar | feed | trending
+ *
+ * Os elementos auxiliares do feed permanecem na coluna central.
+ */
+main > .feed {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+main > .trending {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+main > #infinite-scroll-sentinel,
+main > #infinite-scroll-skeleton,
+main > .pagination {
+    grid-column: 2;
+}
+
 main.auth-main {
     display: flex;
     align-items: center;
@@ -182,7 +204,7 @@ main.auth-main {
 }
 
 /* ==========================================================================
-   5. HEADER / NAVBAR (CORRIGIDO PARA FUNDO ESCURO)
+   5. HEADER / NAVBAR
    ========================================================================== */
 header,
 .navbar,
@@ -205,25 +227,28 @@ header.top-bar {
 }
 
 .header-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    width: 100%;
     height: 100%;
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
 }
 
-.header-left,
-.header-right {
+.header-left {
     display: flex;
     align-items: center;
+    justify-self: start;
     gap: 12px;
 }
 
 .header-right {
-    justify-content: flex-end;
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: 12px;
 }
 
 .logo {
@@ -340,7 +365,7 @@ header.top-bar {
 }
 
 /* ==========================================================================
-   6. NAVEGAÇÃO LATERAL (RAIL / SIDEBAR)
+   6. SIDEBAR / NAVEGAÇÃO LATERAL
    ========================================================================== */
 aside.nav-rail {
     position: sticky;
@@ -407,7 +432,7 @@ aside.nav-rail {
 }
 
 /* ==========================================================================
-   7. PAINÉIS & CARDS DE POSTS
+   7. FEED / POSTS / CARDS
    ========================================================================== */
 .panel-title {
     font-family: var(--font-display);
@@ -553,6 +578,16 @@ aside.nav-rail {
     color: var(--text-color);
 }
 
+.introduction-posts {
+    margin-bottom: 16px;
+    font-size: 20px;
+    color: var(--primary);
+}
+
+.introduction-posts > i{
+    margin-right: 5px;
+}
+
 .post-card__title,
 .post-title a {
     font-family: var(--font-display);
@@ -669,7 +704,7 @@ aside.nav-rail {
 }
 
 /* ==========================================================================
-   PAGINAÇÃO
+   8. PAGINAÇÃO
    ========================================================================== */
 .pagination {
     display: flex;
@@ -798,7 +833,7 @@ aside.nav-rail {
 .button-submit {
     border: none;
     border-radius: var(--radius-sm);
-    padding: 14px 21px;;
+    padding: 14px 21px;
     font-size: 15px;
     font-weight: 700;
     font-family: var(--font-body);
@@ -816,7 +851,7 @@ aside.nav-rail {
 }
 
 /* ==========================================================================
-   9. TRENDING / SIDEBAR
+   9. TRENDING
    ========================================================================== */
 .sidebar-box {
     background: var(--card-bg);
@@ -931,7 +966,7 @@ aside.nav-rail {
 }
 
 /* ==========================================================================
-   10. FORMULÁRIOS & CAMPOS DE ENTRADA
+   10. FORMULÁRIOS / CAMPOS DE ENTRADA
    ========================================================================== */
 .auth-card,
 .compose-card {
@@ -1553,7 +1588,7 @@ input[type="file"]::-webkit-file-upload-button:hover {
 }
 
 /* ==========================================================================
-   12. SISTEMA DE CHAT E CONVERSAS
+   12. CHAT / CONVERSAS
    ========================================================================== */
 .chat-container {
     display: flex;
@@ -2114,7 +2149,7 @@ input[type="file"]::-webkit-file-upload-button:hover {
 }
 
 /* ==========================================================================
-   13. MODAL (POPUP)
+   13. MODAIS / POPUPS
    ========================================================================== */
 .modal-overlay {
     position: fixed;
@@ -2191,6 +2226,19 @@ input[type="file"]::-webkit-file-upload-button:hover {
     margin: 20px 0;
 }
 
+.confirm-modal-message {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
 .modal-user-list {
     max-height: 280px;
     overflow-y: auto;
@@ -2255,7 +2303,7 @@ footer,
 }
 
 /* ==========================================================================
-   15. ANIMAÇÕES & EFEITOS
+   15. ANIMAÇÕES / EFEITOS
    ========================================================================== */
 @keyframes like-pop {
     0% { transform: scale(1); }
@@ -2274,7 +2322,7 @@ footer,
 }
 
 /* ==========================================================================
-   16. SCROLLBAR & ACESSIBILIDADE
+   16. SCROLLBAR / ACESSIBILIDADE
    ========================================================================== */
 ::-webkit-scrollbar {
     width: 10px;
@@ -2310,7 +2358,7 @@ input:focus-visible {
 }
 
 /* ==========================================================================
-   17. RESPONSIVIDADE (MEDIA QUERIES)
+   17. RESPONSIVIDADE
    ========================================================================== */
 @media screen and (max-width: 1080px) {
     main {
@@ -2516,15 +2564,116 @@ input:focus-visible {
     }
 }
 
-.confirm-modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 20px;
+/* ==========================================================================
+   19. LOADING / SKELETON
+   ========================================================================== */
+@keyframes skeleton-pulse {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
 }
 
-.confirm-modal-message {
-    font-size: 14.5px;
-    color: var(--ink-soft);
-    line-height: 1.5;
+.skeleton {
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--line) 37%, var(--surface-2) 63%);
+    background-size: 400% 100%;
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-post-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+.skeleton-line {
+    height: 14px;
+    margin-bottom: 10px;
+}
+
+.skeleton-line--title {
+    height: 20px;
+    width: 60%;
+    margin-bottom: 12px;
+}
+
+.skeleton-line--meta {
+    height: 12px;
+    width: 35%;
+    margin-bottom: 16px;
+}
+
+.skeleton-line--full {
+    width: 100%;
+}
+
+.skeleton-line--80 {
+    width: 80%;
+}
+
+.skeleton-line--40 {
+    width: 40%;
+    margin-bottom: 0;
+    margin-top: 16px;
+    height: 32px;
+    border-radius: 9999px;
+}
+
+.skeleton-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.skeleton-message {
+    display: flex;
+    gap: 8px;
+    max-width: 75%;
+    margin-bottom: 16px;
+}
+
+.skeleton-message.incoming {
+    align-self: flex-start;
+}
+
+.skeleton-message.outgoing {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.skeleton-message .skeleton {
+    height: 40px;
+    width: 180px;
+    border-radius: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}
+
+.header-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    width: 100%;
+}
+
+.header-left {
+    justify-self: start;
+}
+
+.header-content .title {
+    justify-self: center;
+    margin: 0;
+}
+
+.header-right {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
