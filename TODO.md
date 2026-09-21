@@ -52,7 +52,7 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 - [X] Infinite scroll como alternativa à paginação numerada (ou as duas, à escolha do usuário)
 - [X] Melhorar mensagens de erro de formulário (feedback mais claro pro usuário)
 - [X] Revisar acessibilidade: contraste de cores, navegação por teclado, `aria-label`s em todos os botões de ícone
-- [ ] Paginar a parte de notícias na página `home`
+- [X] Paginar a parte de notícias na página `home`
 ---
 
 ## 🧪 Qualidade e infraestrutura

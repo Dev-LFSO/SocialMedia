@@ -1,21 +1,55 @@
 from django.shortcuts import render
 from datetime import datetime
+from django.core.paginator import Paginator
 from decouple import config
+from django.core.cache import cache
 from django_ratelimit.exceptions import Ratelimited
 import requests
 
-# Create your views here.
-def home(request):
+NOTICIAS_POR_PAGINA = 12
+CACHE_KEY_NOTICIAS = 'home:noticias'
+CACHE_TTL_NOTICIAS = 10 * 60
+
+def _buscar_noticias():
+    """
+    Busca um lote grande de notícias da NewsAPI, filtra as que têm imagem
+    e formata a data. O resultado fica em cache por alguns minutos pra
+    não bater na API a cada troca de página nem a cada usuário.
+    """
+    noticias = cache.get(CACHE_KEY_NOTICIAS)
+    if noticias is not None:
+        return noticias
+
     key = config('NEWS_API_KEY')
-    url = 'https://newsapi.org/v2/top-headlines?country=us&apiKey=' + key
-    news_list = requests.get(url).json()
+    url = f'https://newsapi.org/v2/top-headlines?country=us&pageSize=100&apiKey={key}'
 
-    news_list = list(filter(lambda x: x['urlToImage'] is not None, news_list['articles']))
+    try:
+        response = requests.get(url, timeout=5)
+        data = response.json()
+    except requests.RequestException:
+        return []
 
-    for news in news_list:
-        news['publishedAt'] = datetime.strptime(news['publishedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%H:%M - %d/%m/%y')
+    artigos = data.get('articles', [])
+    noticias = [a for a in artigos if a.get('urlToImage')]
 
-    news_list = news_list[0:12]
+    for noticia in noticias:
+        try:
+            noticia['publishedAt'] = datetime.strptime(
+                noticia['publishedAt'], '%Y-%m-%dT%H:%M:%SZ'
+            ).strftime('%H:%M - %d/%m/%y')
+        except (ValueError, KeyError):
+            noticia['publishedAt'] = ''
+
+    cache.set(CACHE_KEY_NOTICIAS, noticias, CACHE_TTL_NOTICIAS)
+    return noticias
+
+
+def home(request):
+    noticias = _buscar_noticias()
+
+    paginator = Paginator(noticias, NOTICIAS_POR_PAGINA)
+    page_number = request.GET.get('page')
+    news_list = paginator.get_page(page_number)
 
     return render(request, 'home.html', {'news_list': news_list})
 
