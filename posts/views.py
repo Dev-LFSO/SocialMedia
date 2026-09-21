@@ -6,17 +6,21 @@ from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.template.loader import render_to_string
 from django.urls import reverse
-from .models import Post
-from .forms import PostCreateForm
+from .models import Post, Comment
+from .decorators import owner_required
 from django.db.models import Count, Q, Exists, OuterRef
 from django.http import JsonResponse
 
 POSTS_POR_PAGINA = 30
 CACHE_KEY_MAIS_CURTIDOS = 'posts:mais_curtidos'
 CACHE_TTL_MAIS_CURTIDOS = 300
+COMMENTS_POR_PAGINA = 10
 
 def _com_likes(queryset, user):
-    queryset = queryset.annotate(num_likes=Count('likes', distinct=True))
+    queryset = queryset.annotate(
+        num_likes=Count('likes', distinct=True),
+        num_comments=Count('comments', distinct=True),
+    )
     if user.is_authenticated:
         likes_do_usuario = Post.likes.through.objects.filter(
             post_id=OuterRef('pk'), user_id=user.id
@@ -108,11 +112,12 @@ def create_post(request):
     return render(request, "create_post.html", {"form": form})
 
 @login_required(login_url='users:login')
+@owner_required(Post, pk_url_kwarg='post_id')
+@require_POST
 def delete_post(request, post_id):
-    if request.method == "POST":
-        post = get_object_or_404(Post, id=post_id, user=request.user)
-        post.delete()
-        cache.delete(CACHE_KEY_MAIS_CURTIDOS)
+    post = request.owned_object
+    post.delete()
+    cache.delete(CACHE_KEY_MAIS_CURTIDOS)
     return redirect(request.META.get('HTTP_REFERER', 'users:my_user'))
 
 @never_cache
@@ -139,3 +144,72 @@ def search_post(request):
         'posts': posts,
     }
     return render(request, 'search_post.html', context)
+
+def list_comments(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    comments_qs = post.comments.select_related('user')
+    paginator = Paginator(comments_qs, COMMENTS_POR_PAGINA)
+    ultima_pagina = paginator.num_pages
+    page_obj = paginator.get_page(ultima_pagina)
+
+    html = render_to_string(
+        'partials/comments_list.html',
+        {
+            'comments': page_obj.object_list,
+            'post_id': post.id,
+            'current_page': ultima_pagina,
+            'has_previous': page_obj.has_previous(),
+            'user': request.user,
+        },
+        request=request,
+    )
+    return JsonResponse({'html': html})
+
+def load_more_comments(request, post_id):
+    """
+    Carrega uma página anterior (comentários mais antigos) sob demanda,
+    usada pelo infinite scroll de dentro da caixa de comentários.
+    """
+    post = get_object_or_404(Post, id=post_id)
+    page = int(request.GET.get('page', 1))
+
+    comments_qs = post.comments.select_related('user')
+    paginator = Paginator(comments_qs, COMMENTS_POR_PAGINA)
+
+    if page < 1 or page > paginator.num_pages:
+        return JsonResponse({'html': '', 'has_previous': False})
+
+    page_obj = paginator.get_page(page)
+    html = render_to_string(
+        'partials/comments_items.html',
+        {'comments': page_obj.object_list, 'user': request.user},
+        request=request,
+    )
+    return JsonResponse({'html': html, 'has_previous': page_obj.has_previous()})
+
+@login_required(login_url='users:login')
+@require_POST
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    content = request.POST.get('content', '').strip()
+
+    if not content:
+        return JsonResponse({'error': 'O comentário não pode estar vazio.'}, status=400)
+    if len(content) > 500:
+        return JsonResponse({'error': 'O comentário não pode ultrapassar 500 caracteres.'}, status=400)
+
+    comment = Comment.objects.create(post=post, user=request.user, content=content)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('partials/comment_item.html', {'comment': comment, 'request': request})
+        return JsonResponse({'html': html})
+
+    return redirect(request.META.get('HTTP_REFERER', 'posts:all_posts'))
+
+@login_required(login_url='users:login')
+@owner_required(Comment, pk_url_kwarg='comment_id')
+@require_POST
+def delete_comment(request, comment_id):
+    comment = request.owned_object
+    comment.delete()
+    return JsonResponse({'success': True})

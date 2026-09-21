@@ -4,17 +4,32 @@
     <p class="post-card__meta">Publicado por <a href="{% url 'users:get_user' post.user.username %}"><strong>{{ post.user.username }}</strong></a> · {{ post.data_posted|date:"H:i  d/m/Y" }}</p>
     <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
 
-    {% if user.is_authenticated %}
-    <button type="button" 
-            class="like-btn" 
-            data-url="{% url 'posts:like_post' post.id %}" 
-            data-post-id="{{ post.id }}"
-            aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}" 
-            aria-label="Curtir post">
-        <i class="fa-solid fa-heart"></i>
-        <span class="like-count">{{ post.num_likes }}</span>
-    </button>
-    {% endif %}
+    <div class="post-card__actions">
+        <div class="post-card__actions-left">
+            {% if user.is_authenticated %}
+            <button type="button" 
+                    class="like-btn" 
+                    data-url="{% url 'posts:like_post' post.id %}" 
+                    data-post-id="{{ post.id }}"
+                    aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}" 
+                    aria-label="Curtir post">
+                <i class="fa-solid fa-heart"></i>
+                <span class="like-count">{{ post.num_likes }}</span>
+            </button>
+            {% endif %}
+
+            <button type="button"
+                    class="comment-toggle-btn"
+                    data-post-id="{{ post.id }}"
+                    data-url="{% url 'posts:list_comments' post.id %}"
+                    aria-label="Ver comentários">
+                <i class="fa-regular fa-comment"></i>
+                <span class="comment-count">{{ post.num_comments }}</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="comments-section" id="comments-section-{{ post.id }}"></div>
 </article>
 {% empty %}
 <div class="empty-state">

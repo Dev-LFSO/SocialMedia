@@ -24,6 +24,18 @@ User = get_user_model()
 
 POSTS_POR_PAGINA = 10
 
+def _com_likes_e_comentarios(queryset, user):
+    queryset = queryset.annotate(
+        num_likes=Count('likes', distinct=True),
+        num_comments=Count('comments', distinct=True),
+    )
+    if user.is_authenticated:
+        likes_do_usuario = Post.likes.through.objects.filter(
+            post_id=OuterRef('pk'), user_id=user.id
+        )
+        queryset = queryset.annotate(is_liked=Exists(likes_do_usuario))
+    return queryset
+
 def _enviar_email_confirmacao(request, user):
     current_site = get_current_site(request)
     subject = 'Confirme seu e-mail - Social Media'
@@ -156,13 +168,9 @@ def search_user(request):
 @login_required(login_url='users:login')
 def get_user(request, username):
     user = get_object_or_404(User, username=username)
-    likes_do_usuario = Post.likes.through.objects.filter(
-        post_id=OuterRef('pk'), user_id=request.user.id
+    user_posts = _com_likes_e_comentarios(
+        Post.objects.filter(user=user).select_related('user'), request.user
     )
-    user_posts = Post.objects.filter(user=user).select_related('user').annotate(
-        num_likes=Count('likes', distinct=True),
-        is_liked=Exists(likes_do_usuario),
-    )  # ordering já vem do Meta.ordering do modelo, não precisa repetir order_by
     data = {
         'profile_user': user,
         'user_posts': user_posts,
@@ -174,38 +182,27 @@ def get_user(request, username):
 def my_user(request):
     user = request.user
 
-    likes_do_usuario = Post.likes.through.objects.filter(
-        post_id=OuterRef('pk'),
-        user_id=user.id,
+    posts_list = _com_likes_e_comentarios(
+        Post.objects.filter(user=user), request.user
     )
-
-    posts_list = (
-        Post.objects.filter(user=user)
-        .select_related('user')
-        .annotate(
-            num_likes=Count('likes', distinct=True),
-            is_liked=Exists(likes_do_usuario),
-        )
-        .order_by('-data_posted', '-id')
-    )
-
     paginator = Paginator(posts_list, POSTS_POR_PAGINA)
     page_number = request.GET.get('page')
     posts = paginator.get_page(page_number)
 
     if request.method == 'POST':
-        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
             return redirect('users:my_user')
     else:
-        form = ProfileUpdateForm(instance=user)
+        form = ProfileUpdateForm(instance=request.user)
 
-    return render(request, 'my_user.html', {
+    data = {
         'form': form,
         'user': user,
         'posts': posts,
-    })
+    }
+    return render(request, 'my_user.html', data)
 
 @login_required
 @require_POST

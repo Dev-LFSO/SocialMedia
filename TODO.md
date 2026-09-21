@@ -37,7 +37,7 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 
 ## ✨ Novas funcionalidades
 
-- [ ] **Comentários em posts**
+- [X] **Comentários em posts**
 - [ ] **Seguir / deixar de seguir usuários**, com feed personalizado mostrando só quem você segue
 - [ ] **Upload de imagens/anexos nos posts**, não só texto
 - [ ] **Reações além do like** (❤️ 😂 😮 😢, por exemplo)

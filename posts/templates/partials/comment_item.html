@@ -1,0 +1,23 @@
+<div class="comment-item" id="comment-{{ comment.id }}">
+    <div class="comment-avatar">
+        {% if comment.user.profile_picture %}
+            <img src="{{ comment.user.profile_picture.url }}" alt="{{ comment.user.username }}" loading="lazy">
+        {% else %}
+            <div class="comment-avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+        {% endif %}
+    </div>
+    <div class="comment-body">
+        <div class="comment-bubble">
+            <a href="{% url 'users:get_user' comment.user.username %}" class="comment-author">{{ comment.user.username }}</a>
+            <p class="comment-content">{{ comment.content }}</p>
+        </div>
+        <div class="comment-meta">
+            <span class="comment-time">{{ comment.created_at|date:"H:i d/m/Y" }}</span>
+            {% if request.user == comment.user %}
+            <button type="button" class="comment-delete-btn" data-url="{% url 'posts:delete_comment' comment.id %}" title="Excluir comentário">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>

@@ -128,3 +128,213 @@ function showConfirm(message, onConfirm, options) {
         onConfirm();
     });
 }
+
+/* ==========================================================================
+   COMENTÁRIOS
+   ========================================================================== */
+$(document).on('click', '.comment-toggle-btn', function () {
+    var $btn = $(this);
+    var postId = $btn.data('post-id');
+    var $section = $('#comments-section-' + postId);
+    var url = $btn.data('url');
+
+    if ($section.is(':visible')) {
+        $section.slideUp(150);
+        return;
+    }
+
+    if ($section.data('loaded')) {
+        $section.slideDown(150);
+        return;
+    }
+
+    $section.html('<p class="comments-loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando comentários...</p>');
+    $section.slideDown(150);
+
+    $.ajax({
+        url: url,
+        type: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function (data) {
+            $section.html(data.html);
+            $section.data('loaded', true);
+
+            var $scrollBox = $section.find('.comments-scroll');
+            $scrollBox.data('has-next', data.has_next);
+            $scrollBox.data('next-page', data.next_page_number);
+
+            setupCommentsInfiniteScroll($scrollBox[0], url);
+        },
+        error: function () {
+            $section.html('<p class="comments-loading">Erro ao carregar comentários.</p>');
+        }
+    });
+});
+
+function setupCommentsInfiniteScroll(scrollBoxEl, baseUrl) {
+    if (!scrollBoxEl) return;
+    var $scrollBox = $(scrollBoxEl);
+    var sentinel = scrollBoxEl.querySelector('.comments-sentinel');
+    if (!sentinel) return;
+
+    var carregando = false;
+
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                carregarMaisComentarios();
+            }
+        });
+    }, { root: scrollBoxEl, rootMargin: '80px' }); // root = a própria caixa, não a página
+
+    observer.observe(sentinel);
+
+    function carregarMaisComentarios() {
+        var hasNext = $scrollBox.data('has-next');
+        var nextPage = $scrollBox.data('next-page');
+        if (!hasNext || !nextPage || carregando) return;
+
+        carregando = true;
+        var $loadingIndicator = $('<p class="comments-loading-more"><i class="fa-solid fa-spinner fa-spin"></i></p>');
+        $(sentinel).before($loadingIndicator);
+
+        $.ajax({
+            url: baseUrl,
+            type: 'GET',
+            data: { page: nextPage },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            dataType: 'json',
+            success: function (data) {
+                $loadingIndicator.remove();
+                $scrollBox.find('.comments-list').append(data.html);
+                $scrollBox.data('has-next', data.has_next);
+                $scrollBox.data('next-page', data.next_page_number);
+            },
+            error: function () {
+                $loadingIndicator.remove();
+            },
+            complete: function () {
+                carregando = false;
+            }
+        });
+    }
+}
+
+function setupCommentsInfiniteScroll(scrollBoxEl, baseUrl) {
+    if (!scrollBoxEl) return;
+    var $scrollBox = $(scrollBoxEl);
+    var sentinel = scrollBoxEl.querySelector('.comments-sentinel');
+    if (!sentinel) return;
+
+    var carregando = false;
+
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                carregarMaisComentarios();
+            }
+        });
+    }, { root: scrollBoxEl, rootMargin: '80px' }); // root = a própria caixa, não a página
+
+    observer.observe(sentinel);
+
+    function carregarMaisComentarios() {
+        var hasNext = $scrollBox.data('has-next');
+        var nextPage = $scrollBox.data('next-page');
+        if (!hasNext || !nextPage || carregando) return;
+
+        carregando = true;
+        var $loadingIndicator = $('<p class="comments-loading-more"><i class="fa-solid fa-spinner fa-spin"></i></p>');
+        $(sentinel).before($loadingIndicator);
+
+        $.ajax({
+            url: baseUrl,
+            type: 'GET',
+            data: { page: nextPage },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            dataType: 'json',
+            success: function (data) {
+                $loadingIndicator.remove();
+                $scrollBox.find('.comments-list').append(data.html);
+                $scrollBox.data('has-next', data.has_next);
+                $scrollBox.data('next-page', data.next_page_number);
+            },
+            error: function () {
+                $loadingIndicator.remove();
+            },
+            complete: function () {
+                carregando = false;
+            }
+        });
+    }
+}
+
+$(document).on('submit', '.comment-form', function (e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $input = $form.find('input[name="content"]');
+    var content = $input.val().trim();
+    if (!content) return;
+
+    var url = $form.data('url');
+    var csrfToken = $form.find('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: { content: content },
+        headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function (data) {
+            var $section = $form.closest('.comments-section');
+            var $list = $section.find('.comments-list');
+            $list.find('.comments-empty').remove();
+            $list.append(data.html);
+            $input.val('');
+
+            var postId = $section.attr('id').replace('comments-section-', '');
+            var $countSpan = $('.comment-toggle-btn[data-post-id="' + postId + '"] .comment-count');
+            var atual = parseInt($countSpan.text()) || 0;
+            $countSpan.text(atual + 1);
+        },
+        error: function (xhr) {
+            var msg = (xhr.responseJSON && xhr.responseJSON.error) || 'Erro ao enviar comentário. Tente novamente.';
+            showToast(msg, 'error');
+        }
+    });
+});
+
+$(document).on('click', '.comment-delete-btn', function (e) {
+    e.preventDefault();
+    var $btn = $(this);
+    var $item = $btn.closest('.comment-item');
+    var url = $btn.data('url');
+
+    showConfirm('Tem certeza que deseja excluir este comentário?', function () {
+        var csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+        $.ajax({
+            url: url,
+            type: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            dataType: 'json',
+            success: function () {
+                var $section = $item.closest('.comments-section');
+                $item.fadeOut(200, function () {
+                    $(this).remove();
+                    if ($section.find('.comment-item').length === 0) {
+                        $section.find('.comments-list').append('<p class="comments-empty">Nenhum comentário ainda. Seja o primeiro a comentar!</p>');
+                    }
+                });
+
+                var postId = $section.attr('id').replace('comments-section-', '');
+                var $countSpan = $('.comment-toggle-btn[data-post-id="' + postId + '"] .comment-count');
+                var atual = parseInt($countSpan.text()) || 0;
+                $countSpan.text(Math.max(0, atual - 1));
+            },
+            error: function () {
+                showToast('Erro ao excluir comentário. Tente novamente.', 'error');
+            }
+        });
+    });
+});
