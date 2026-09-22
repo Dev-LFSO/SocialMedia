@@ -338,3 +338,29 @@ $(document).on('click', '.comment-delete-btn', function (e) {
         });
     });
 });
+function openModal(imgElement) {
+  const modal = document.getElementById('image-modal');
+  const modalImg = document.getElementById('modal-img');
+  
+  modalImg.src = imgElement.src;
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden'; // Impede a rolagem da página atrás
+}
+
+function closeModal(event) {
+  // Fecha se clicar fora da imagem ou no botão 'X'
+  if (event.target.id === 'image-modal' || event.target.classList.contains('close-btn')) {
+    const modal = document.getElementById('image-modal');
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto'; // Reativa a rolagem da página
+  }
+}
+
+// Permite fechar a imagem apertando ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('image-modal');
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+  }
+});

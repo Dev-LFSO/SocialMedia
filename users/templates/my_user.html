@@ -61,8 +61,11 @@
                                 Publicado em {{ post.data_posted|date:"d/m/Y \à\s H:i" }}
                             </p>
                             <div class="post-card__content">
-                                {{ post.content }}
+                                {{ post.content|linebreaksbr }}
                             </div>
+                            {% if post.image %}
+                            <img src="{{ post.image.url }}" alt="Imagem do post: {{ post.title }}" loading="lazy" class="post-card__image" onclick="openModal(this)">
+                            {% endif %}
                             <div class="post-card__actions">
                                 <div class="post-card__actions-left">
                                     <button type="button" 
@@ -229,6 +232,10 @@
             </div>
         </div>
     </section>
+    <div id="image-modal" class="image-modal" onclick="closeModal(event)">
+        <span class="close-btn">&times;</span>
+        <img class="modal-content" id="modal-img" alt="Imagem ampliada">
+    </div>
 </main>
 <script>
 $(document).on('submit', '.delete-post-form', function (e) {

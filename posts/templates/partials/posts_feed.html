@@ -4,6 +4,10 @@
     <p class="post-card__meta">Publicado por <a href="{% url 'users:get_user' post.user.username %}"><strong>{{ post.user.username }}</strong></a> · {{ post.data_posted|date:"H:i  d/m/Y" }}</p>
     <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
 
+    {% if post.image %}
+    <img src="{{ post.image.url }}" alt="Imagem do post: {{ post.title }}" loading="lazy" class="post-card__image" onclick="openModal(this)">
+    {% endif %}
+
     <div class="post-card__actions">
         <div class="post-card__actions-left">
             {% if user.is_authenticated %}
@@ -36,3 +40,7 @@
     <p>Ainda não há posts por aqui. Seja o primeiro a publicar!</p>
 </div>
 {% endfor %}
+<div id="image-modal" class="image-modal" onclick="closeModal(event)">
+  <span class="close-btn">&times;</span>
+  <img class="modal-content" id="modal-img" alt="Imagem ampliada">
+</div>

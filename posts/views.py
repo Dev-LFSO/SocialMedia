@@ -4,11 +4,12 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.urls import reverse
 from .models import Post, Comment
 from .decorators import owner_required
-from django.db.models import Count, Q, Exists, OuterRef
+from django.db.models import Q, Count, Exists, OuterRef, Value, BooleanField
 from django.http import JsonResponse
 
 POSTS_POR_PAGINA = 30
@@ -21,12 +22,18 @@ def _com_likes(queryset, user):
         num_likes=Count('likes', distinct=True),
         num_comments=Count('comments', distinct=True),
     )
+    
     if user.is_authenticated:
         likes_do_usuario = Post.likes.through.objects.filter(
             post_id=OuterRef('pk'), user_id=user.id
         )
         queryset = queryset.annotate(is_liked=Exists(likes_do_usuario))
-    return queryset
+    else:
+        # Garante que is_liked sempre existe na struct, retornando False
+        queryset = queryset.annotate(is_liked=Value(False, output_field=BooleanField()))
+    
+    # Ordenação necessária para eliminar o UnorderedObjectListWarning do Paginator
+    return queryset.order_by('-data_posted')
 
 def _get_mais_curtidos_ids():
     ids = cache.get(CACHE_KEY_MAIS_CURTIDOS)
@@ -96,20 +103,32 @@ def goto_post(request, post_id):
     url = f"{reverse('posts:all_posts')}?page={pagina}#{post.id}"
     return redirect(url)
 
-@login_required(login_url="users:login")
+@login_required(login_url='users:login')
 def create_post(request):
-    if request.method == "POST":
-        form = PostCreateForm(request.POST)
+    if request.method == "GET":
+        return render(request, 'create_post.html')
+    elif request.method == "POST":
+        title = request.POST.get("title")
+        content = request.POST.get("content")
+        image = request.FILES.get("image")
 
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.user = request.user
-            post.save()
-            return redirect("posts:all_posts")
-    else:
-        form = PostCreateForm()
+        post = Post(title=title, content=content, user=request.user)
+        if image:
+            post.image = image
 
-    return render(request, "create_post.html", {"form": form})
+        try:
+            post.full_clean()
+        except ValidationError as e:
+            errors = e.message_dict.get('image', e.messages)
+            return render(request, 'create_post.html', {
+                'error': ' '.join(errors) if isinstance(errors, list) else errors,
+                'title': title,
+                'content': content,
+            })
+
+        post.save()
+        cache.delete(CACHE_KEY_MAIS_CURTIDOS)
+        return redirect("posts:all_posts")
 
 @login_required(login_url='users:login')
 @owner_required(Post, pk_url_kwarg='post_id')

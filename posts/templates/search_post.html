@@ -22,7 +22,7 @@
                         value="{{ query|default:'' }}" 
                         placeholder="Digite conteúdo, título, autor..." 
                         style="flex: 1; min-width: 240px;">
-                    <button type="submit" class="button-submit" style="margin-top: 0; white-space: nowrap;">
+                    <button type="submit" class="button-submit" style="margin-top: 0; white-space: nowrap; justify-content: space-between; width: 120px;">
                         <i class="fa-solid fa-magnifying-glass"></i> Buscar
                     </button>
                 </div>
@@ -48,6 +48,9 @@
                     Publicado por <a href="{% url 'users:get_user' post.user.username %}"><strong>{{ post.user.username }}</strong></a>· {{ post.data_posted|date:"H:i  d/m/Y" }}
                 </p>
                 <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
+                {% if post.image %}
+                <img src="{{ post.image.url }}" alt="Imagem do post: {{ post.title }}" loading="lazy" class="post-card__image" onclick="openModal(this)">
+                {% endif %}
                 <div class="post-card__actions">
                     <div class="post-card__actions-left">
                         {% if user.is_authenticated %}
@@ -103,6 +106,10 @@
             {% endif %}
         </section>
     </section>
+    <div id="image-modal" class="image-modal" onclick="closeModal(event)">
+        <span class="close-btn">&times;</span>
+        <img class="modal-content" id="modal-img" alt="Imagem ampliada">
+    </div>
 </main>
 <script>
 // Função utilitária para capturar o cookie do CSRF
