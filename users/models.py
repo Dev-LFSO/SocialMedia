@@ -2,6 +2,7 @@ import re
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.conf import settings
 
 MAX_PROFILE_PICTURE_SIZE_MB = 5
 ALLOWED_PROFILE_PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -85,3 +86,23 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.name or self.username
+
+    def is_following(self, other_user):
+        return self.following_relations.filter(following=other_user).exists()
+
+class Follow(models.Model):
+    follower = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='following_relations'
+    )
+    following = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='follower_relations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['follower', 'following'], name='unique_follow'),
+        ]
+
+    def __str__(self):
+        return f'{self.follower.username} segue {self.following.username}'

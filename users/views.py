@@ -17,7 +17,7 @@ from django.contrib import messages
 from posts.models import Post
 from .forms import LoginForm, ProfileUpdateForm, UserRegisterForm
 from django_ratelimit.decorators import ratelimit
-from django_ratelimit.exceptions import Ratelimited
+from .models import Follow
 from .tokens import email_verification_token
 
 User = get_user_model()
@@ -52,6 +52,26 @@ def _enviar_email_confirmacao(request, user):
     email = EmailMultiAlternatives(subject, plain_message, to=[user.email])
     email.attach_alternative(html_message, "text/html")
     email.send()
+
+@login_required
+@require_POST
+def toggle_follow(request, username):
+    target_user = get_object_or_404(User, username=username)
+
+    if target_user == request.user:
+        return JsonResponse({'error': 'Você não pode seguir a si mesmo.'}, status=400)
+
+    follow, created = Follow.objects.get_or_create(follower=request.user, following=target_user)
+    if not created:
+        follow.delete()
+        following = False
+    else:
+        following = True
+
+    return JsonResponse({
+        'following': following,
+        'followers_count': target_user.follower_relations.count(),
+    })
 
 @ratelimit(key='ip', rate='5/m', method='POST', block=True)
 def register(request):
@@ -174,10 +194,12 @@ def get_user(request, username):
     data = {
         'profile_user': user,
         'user_posts': user_posts,
+        'is_following': request.user.is_following(user) if request.user != user else None,
+        'followers_count': user.follower_relations.count(),
+        'following_count': user.following_relations.count(),
     }
     return render(request, 'user.html', data)
 
-@never_cache
 @login_required(login_url='users:login')
 def my_user(request):
     user = request.user
@@ -201,6 +223,8 @@ def my_user(request):
         'form': form,
         'user': user,
         'posts': posts,
+        'followers_count': user.follower_relations.count(),
+        'following_count': user.following_relations.count(),
     }
     return render(request, 'my_user.html', data)
 

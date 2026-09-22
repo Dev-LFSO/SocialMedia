@@ -1,17 +1,26 @@
 {% extends "main.html" %}
 {% load static %}
+{% block title %}Seguindo - Social Media{% endblock %}
 {% block content %}
-<main>
+<main class="main--sem-trending">
     {% include "sidebar.html" %}
 
     <section class="feed" id="feed">
-        {% include "partials/posts_feed.html" %}
+        <h1 class="panel-title">Seguindo</h1>
+
+        {% if following_count == 0 %}
+        <div class="empty-state">
+            <i class="fa-solid fa-user-group fa-2x" style="margin-bottom: 12px; color: var(--ink-faint);"></i>
+            <p>Você ainda não segue ninguém. Visite um perfil e clique em "Seguir" para ver os posts aqui.</p>
+        </div>
+        {% else %}
+            {% include "partials/posts_feed.html" %}
+        {% endif %}
     </section>
 
-    <!-- Sentinela: quando este elemento entra na viewport, carrega a próxima página -->
+    {% if following_count > 0 %}
     <div id="infinite-scroll-sentinel" style="height: 1px;"></div>
 
-    <!-- Skeleton exibido enquanto a próxima página carrega -->
     <div id="infinite-scroll-skeleton" style="display: none;">
         <div class="skeleton-post-card" style="margin-top: 16px;">
             <div class="skeleton skeleton-line--title"></div>
@@ -36,47 +45,12 @@
         {% endif %}
     </nav>
     {% endif %}
-
-    <aside class="trending">
-        <h1 class="panel-title">Mais curtidos</h1>
-        <div class="trending-list">
-        {% for post in more_liked_posts %}
-        <div class="trending-item">
-            <a href="{% url 'posts:goto_post' post.id %}">{{ post.title }}</a>
-            <ul>
-                <li>{{ post.num_likes }} curtidas</li>
-                <li>Publicado por <a href="{% url 'users:get_user' post.user.username %}">{{ post.user.username }}</a></li>
-                <li>{{ post.data_posted|date:"H:i  m/d/Y" }}</li>
-            </ul>
-        </div>
-        {% empty %}
-        <div class="empty-state">
-            <p>Sem destaques ainda.</p>
-        </div>
-        {% endfor %}
-        </div>
-    </aside>
+    {% endif %}
 </main>
 <script>
-
-var currentPage = {{ posts.number }};
+var currentPage = {{ posts.number|default:1 }};
 var hasNextPage = {% if posts.has_next %}true{% else %}false{% endif %};
 var carregandoProximaPagina = false;
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
 
 function carregarProximaPagina() {
     if (!hasNextPage || carregandoProximaPagina) return;
@@ -106,24 +80,33 @@ function carregarProximaPagina() {
 }
 
 $(document).ready(function () {
-
-    // A paginação numerada some quando JS está ativo — o infinite scroll assume,
-    // mas o link continua funcionando normalmente pra quem acessa sem JS (progressive enhancement)
     if (hasNextPage || currentPage > 1) {
         $('#numbered-pagination').hide();
     }
 
-    // Observa a sentinela: quando ela entra na tela, carrega mais posts
-    var observer = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-                carregarProximaPagina();
-            }
-        });
-    }, { rootMargin: '200px' }); // começa a carregar um pouco antes de chegar ao fim
-
     var sentinela = document.getElementById('infinite-scroll-sentinel');
-    if (sentinela) observer.observe(sentinela);
+    if (sentinela) {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) carregarProximaPagina();
+            });
+        }, { rootMargin: '200px' });
+        observer.observe(sentinela);
+    }
 });
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 </script>
 {% endblock %}

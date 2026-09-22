@@ -23,7 +23,12 @@
             <div class="profile-info">
                 <h1 class="profile-name">{{ user.name|default:user.username }}</h1>
                 <p class="profile-username">@{{ user.username }}</p>
-                
+
+                <div class="follow-stats">
+                    <span><strong>{{ followers_count }}</strong> seguidores</span>
+                    <span><strong>{{ following_count }}</strong> seguindo</span>
+                </div>
+
                 {% if user.bio %}
                     <p class="profile-bio">{{ user.bio }}</p>
                 {% endif %}
@@ -67,36 +72,31 @@
                             <img src="{{ post.image.url }}" alt="Imagem do post: {{ post.title }}" loading="lazy" class="post-card__image" onclick="openModal(this)">
                             {% endif %}
                             <div class="post-card__actions">
-                                <div class="post-card__actions-left">
-                                    <button type="button" 
-                                            class="like-btn" 
-                                            data-url="{% url 'posts:like_post' post.id %}" 
-                                            data-post-id="{{ post.id }}"
-                                            aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}" 
-                                            aria-label="Curtir post">
-                                        <i class="fa-solid fa-heart"></i>
-                                        <span class="like-count">{{ post.num_likes }}</span>
-                                    </button>
+                            <div class="post-card__actions-left">
+                                {% if user.is_authenticated %}
+                                <button type="button" 
+                                        class="like-btn" 
+                                        data-url="{% url 'posts:like_post' post.id %}" 
+                                        data-post-id="{{ post.id }}"
+                                        aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}" 
+                                        aria-label="Curtir post">
+                                    <i class="fa-solid fa-heart"></i>
+                                    <span class="like-count">{{ post.num_likes }}</span>
+                                </button>
 
-                                    <button type="button"
-                                            class="comment-toggle-btn"
-                                            data-post-id="{{ post.id }}"
-                                            data-url="{% url 'posts:list_comments' post.id %}"
-                                            aria-label="Ver comentários">
-                                        <i class="fa-regular fa-comment"></i>
-                                        <span class="comment-count">{{ post.num_comments }}</span>
-                                    </button>
-                                </div>
-
-                                <form action="{% url 'posts:delete_post' post.id %}" method="POST" style="display: inline;" class="delete-post-form">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn-delete" title="Excluir post">
-                                        <i class="fa-solid fa-trash-can"></i> Excluir
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        class="comment-toggle-btn"
+                                        data-post-id="{{ post.id }}"
+                                        data-url="{% url 'posts:list_comments' post.id %}"
+                                        aria-label="Ver comentários">
+                                    <i class="fa-regular fa-comment"></i>
+                                    <span class="comment-count">{{ post.num_comments }}</span>
+                                </button>
+                                {% endif %}
                             </div>
+                        </div>
 
-                            <div class="comments-section" id="comments-section-{{ post.id }}"></div>
+                        <div class="comments-section" id="comments-section-{{ post.id }}"></div>
                         </article>
                     {% endfor %}
                 </div>

@@ -47,6 +47,32 @@ def _get_mais_curtidos_ids():
         cache.set(CACHE_KEY_MAIS_CURTIDOS, ids, CACHE_TTL_MAIS_CURTIDOS)
     return ids
 
+@login_required(login_url='users:login')
+@never_cache
+def following_feed(request):
+    following_ids = request.user.following_relations.values_list('following_id', flat=True)
+
+    posts_list = _com_likes(
+        Post.objects.filter(user_id__in=following_ids).select_related('user'), request.user
+    )
+
+    paginator = Paginator(posts_list, POSTS_POR_PAGINA)
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('partials/posts_feed.html', {'posts': posts, 'user': request.user}, request=request)
+        return JsonResponse({
+            'html': html,
+            'has_next': posts.has_next(),
+            'next_page_number': posts.next_page_number() if posts.has_next() else None,
+        })
+
+    return render(request, 'following_feed.html', {
+        'posts': posts,
+        'following_count': len(following_ids),
+    })
+
 @never_cache
 def all_posts(request):
     posts_list = _com_likes(
@@ -89,7 +115,6 @@ def like_post(request, post_id):
         liked = True
 
     cache.delete(CACHE_KEY_MAIS_CURTIDOS)
-
     return JsonResponse({'liked': liked, 'like_count': post.likes.count()})
 
 def goto_post(request, post_id):
@@ -164,6 +189,7 @@ def search_post(request):
     }
     return render(request, 'search_post.html', context)
 
+@login_required(login_url='users:login')
 def list_comments(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments_qs = post.comments.select_related('user')

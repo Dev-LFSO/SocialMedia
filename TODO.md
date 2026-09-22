@@ -38,12 +38,11 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 ## ✨ Novas funcionalidades
 
 - [X] **Comentários em posts**
-- [ ] **Seguir / deixar de seguir usuários**, com feed personalizado mostrando só quem você segue
+- [X] **Seguir / deixar de seguir usuários**, com feed personalizado mostrando só quem você segue
 - [X] **Upload de imagens/anexos nos posts**, não só texto
 - [ ] **Reações além do like** (❤️ 😂 😮 😢, por exemplo)
 - [ ] **Adicionar imagens nas conversas**, ou até anexos
-- [ ] **Posts salvos/favoritos** (marcar pra ler depois)
-- [ ] **Modo escuro** (dark mode)
+- [X] **Modo escuro** (dark mode)
 - [X] **Mais Curtidos > 0**, manter apenas posts no mais curtidos com mais de 0 curtidas
 ---
 

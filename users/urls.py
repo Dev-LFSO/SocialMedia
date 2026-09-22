@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import login_view, logout_view, register, my_user, get_user, search_user, remove_profile_picture, remove_profile_picture, verify_email, resend_verification_email
+from .views import login_view, logout_view, register, my_user, get_user, search_user, remove_profile_picture, remove_profile_picture, verify_email, resend_verification_email, toggle_follow
 from django_ratelimit.decorators import ratelimit
 
 app_name = 'users'
@@ -48,6 +48,7 @@ urlpatterns = [
     path('remove_profile_picture/', remove_profile_picture, name='remove_profile_picture'),
     path('verify_email/<uidb64>/<token>/', verify_email, name='verify_email'),
     path('resend_verification/', resend_verification_email, name='resend_verification'),
+    path('toggle_follow/<str:username>/', toggle_follow, name='toggle_follow'),
     path('my_user/', my_user, name='my_user'),
     path('<str:username>', get_user, name='get_user'),
 ]

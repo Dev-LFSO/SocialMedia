@@ -364,3 +364,88 @@ document.addEventListener('keydown', function(e) {
     document.body.style.overflow = 'auto';
   }
 });
+
+function incrementarTextoCurtidas(texto, value) {
+    var quantidadeAtual = parseInt(texto, 10);
+    if (isNaN(quantidadeAtual)) return texto;
+    var novaQuantidade = quantidadeAtual + value;
+    return novaQuantidade + ' curtidas';
+}
+
+function atualizarTrendingItem(postId, estaCurtido) {
+    $('.trending-item').each(function (index, elemento) {
+        var $link = $(elemento).find('a');
+        var href = $link.attr('href');
+
+        if (href && href.includes(postId)) {
+            var $primeiraLi = $(elemento).find('ul li').first();
+            var textoAtual = $primeiraLi.text();
+            var delta = estaCurtido ? 1 : -1;
+            var novoTexto = incrementarTextoCurtidas(textoAtual, delta);
+            $primeiraLi.text(novoTexto);
+        }
+    });
+}
+
+$(document).on('click', '.like-btn', function() {
+    const $btn = $(this);
+    const $count = $btn.find('.like-count');
+
+    const likeUrl = $btn.data('url');
+    const postId = $btn.data('post-id');
+
+    const isLiked = $btn.attr('aria-pressed') === 'true';
+    const newLikedState = !isLiked;
+    let currentLikes = parseInt($count.text()) || 0;
+
+    $btn.attr('aria-pressed', newLikedState);
+    $count.text(newLikedState ? currentLikes + 1 : currentLikes - 1);
+
+    atualizarTrendingItem(postId, newLikedState);
+
+    const csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+    $.ajax({
+        url: likeUrl,
+        type: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken
+        },
+        dataType: "json",
+        error: function(xhr, status, error) {
+            $btn.attr('aria-pressed', isLiked);
+            $count.text(currentLikes);
+            atualizarTrendingItem(postId, isLiked);
+            showToast('Erro ao registrar curtida. Tente novamente.', 'error');
+        }
+    });
+});
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+function aplicarIconeTema() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var icon = document.querySelector('#dark-mode-toggle i');
+    if (icon) {
+        icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    aplicarIconeTema();
+
+    var toggleBtn = document.getElementById('dark-mode-toggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            aplicarIconeTema();
+        });
+    }
+});

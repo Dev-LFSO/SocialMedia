@@ -34,14 +34,32 @@
                     <h1 class="title" style="margin: 0; font-size: 24px;">
                         {{ profile_user.name|default:profile_user.username }}
                     </h1>
-                    <p class="post-card__meta" style="margin: 4px 0 12px 0; font-size: 15px;">
+                    <p class="post-card__meta" style="margin: 4px 0 8px 0; font-size: 15px;">
                         @{{ profile_user.username }}
                     </p>
 
+                    <div class="follow-stats">
+                        <span><strong>{{ followers_count }}</strong> seguidores</span>
+                        <span><strong>{{ following_count }}</strong> seguindo</span>
+                    </div>
+
+                    {% if is_following is not None %}
+                    <button type="button"
+                            class="follow-btn"
+                            data-url="{% url 'users:toggle_follow' profile_user.username %}"
+                            data-following="{% if is_following %}true{% else %}false{% endif %}">
+                        {% if is_following %}
+                            <i class="fa-solid fa-user-check"></i> Seguindo
+                        {% else %}
+                            <i class="fa-solid fa-user-plus"></i> Seguir
+                        {% endif %}
+                    </button>
+                    {% endif %}
+
                     {% if profile_user.bio %}
-                        <p class="post-card__content" style="margin-bottom: 0;">{{ profile_user.bio|linebreaksbr }}</p>
+                        <p class="post-card__content" style="margin: 12px 0 0 0;">{{ profile_user.bio|linebreaksbr }}</p>
                     {% else %}
-                        <p style="color: var(--ink-faint, #888); font-style: italic; margin-bottom: 0;">Nenhuma biografia informada.</p>
+                        <p style="color: var(--ink-faint); font-style: italic; margin: 12px 0 0 0;">Nenhuma biografia informada.</p>
                     {% endif %}
                 </div>
             </div>
@@ -114,6 +132,7 @@
                     {% endif %}
                     <div class="post-card__actions">
                         <div class="post-card__actions-left">
+                            {% if user.is_authenticated %}
                             <button type="button" 
                                     class="like-btn" 
                                     data-url="{% url 'posts:like_post' post.id %}" 
@@ -132,6 +151,7 @@
                                 <i class="fa-regular fa-comment"></i>
                                 <span class="comment-count">{{ post.num_comments }}</span>
                             </button>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -162,5 +182,32 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+$(document).on('click', '.follow-btn', function () {
+    var $btn = $(this);
+    var url = $btn.data('url');
+    var isFollowing = $btn.data('following') === true || $btn.data('following') === 'true';
+
+    var csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        dataType: 'json',
+        success: function (data) {
+            $btn.data('following', data.following);
+            if (data.following) {
+                $btn.html('<i class="fa-solid fa-user-check"></i> Seguindo').addClass('is-following');
+            } else {
+                $btn.html('<i class="fa-solid fa-user-plus"></i> Seguir').removeClass('is-following');
+            }
+            $btn.closest('.profile-main-info').find('.follow-stats span').first()
+                .html('<strong>' + data.followers_count + '</strong> seguidores');
+        },
+        error: function () {
+            showToast('Erro ao atualizar seguidor. Tente novamente.', 'error');
+        }
+    });
+});
 </script>
 {% endblock %}
