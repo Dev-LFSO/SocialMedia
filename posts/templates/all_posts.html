@@ -44,7 +44,7 @@
         <div class="trending-item">
             <a href="{% url 'posts:goto_post' post.id %}">{{ post.title }}</a>
             <ul>
-                <li>{{ post.num_likes }} curtidas</li>
+                <li>{{ post.num_like }} curtidas</li>
                 <li>Publicado por <a href="{% url 'users:get_user' post.user.username %}">{{ post.user.username }}</a></li>
                 <li>{{ post.data_posted|date:"H:i  m/d/Y" }}</li>
             </ul>

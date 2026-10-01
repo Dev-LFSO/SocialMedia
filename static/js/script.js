@@ -372,53 +372,18 @@ function incrementarTextoCurtidas(texto, value) {
     return novaQuantidade + ' curtidas';
 }
 
-function atualizarTrendingItem(postId, estaCurtido) {
+/* ==========================================================================
+   REAÇÕES EM POSTS (inclui like, unificado)
+   ========================================================================== */
+function atualizarTrendingLikes(postId, novoValor) {
     $('.trending-item').each(function (index, elemento) {
         var $link = $(elemento).find('a');
         var href = $link.attr('href');
-
         if (href && href.includes(postId)) {
-            var $primeiraLi = $(elemento).find('ul li').first();
-            var textoAtual = $primeiraLi.text();
-            var delta = estaCurtido ? 1 : -1;
-            var novoTexto = incrementarTextoCurtidas(textoAtual, delta);
-            $primeiraLi.text(novoTexto);
+            $(elemento).find('ul li').first().text(novoValor + ' curtidas');
         }
     });
 }
-
-$(document).on('click', '.like-btn', function() {
-    const $btn = $(this);
-    const $count = $btn.find('.like-count');
-
-    const likeUrl = $btn.data('url');
-    const postId = $btn.data('post-id');
-
-    const isLiked = $btn.attr('aria-pressed') === 'true';
-    const newLikedState = !isLiked;
-    let currentLikes = parseInt($count.text()) || 0;
-
-    $btn.attr('aria-pressed', newLikedState);
-    $count.text(newLikedState ? currentLikes + 1 : currentLikes - 1);
-
-    atualizarTrendingItem(postId, newLikedState);
-
-    const csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
-    $.ajax({
-        url: likeUrl,
-        type: "POST",
-        headers: {
-            "X-CSRFToken": csrfToken
-        },
-        dataType: "json",
-        error: function(xhr, status, error) {
-            $btn.attr('aria-pressed', isLiked);
-            $count.text(currentLikes);
-            atualizarTrendingItem(postId, isLiked);
-            showToast('Erro ao registrar curtida. Tente novamente.', 'error');
-        }
-    });
-});
 
 /* ==========================================================================
    DARK MODE
@@ -448,4 +413,65 @@ document.addEventListener('DOMContentLoaded', function () {
             aplicarIconeTema();
         });
     }
+});
+
+/* ==========================================================================
+   EXCLUIR MENSAGEM DO CHAT
+   ========================================================================== */
+$(document).on('click', '.message-delete-btn', function (e) {
+    e.preventDefault();
+    var $btn = $(this);
+    var $messageGroup = $btn.closest('.message-group');
+    var url = $btn.data('url');
+
+    showConfirm('Tem certeza que deseja excluir esta mensagem?', function () {
+        var csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            dataType: 'json',
+            success: function () {
+                $messageGroup.fadeOut(200, function () {
+                    $(this).remove();
+                });
+            },
+            error: function () {
+                showToast('Erro ao excluir mensagem. Tente novamente.', 'error');
+            }
+        });
+    });
+});
+
+/* ==========================================================================
+   REAÇÕES EM POSTS
+   ========================================================================== */
+$(document).on('click', '.reaction-btn', function () {
+    var $btn = $(this);
+    var url = $btn.data('url');
+    var reactionType = $btn.data('reaction');
+    var $group = $btn.closest('.reaction-group');
+    var csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: { reaction_type: reactionType },
+        headers: { 'X-CSRFToken': csrfToken },
+        dataType: 'json',
+        success: function (data) {
+            $group.find('.reaction-btn').removeClass('active');
+            ['like','laugh', 'wow', 'sad'].forEach(function (type) {
+                var count = data.counts[type];
+                var $b = $group.find('.reaction-btn[data-reaction="' + type + '"]');
+                $b.find('.reaction-count').text(count > 0 ? count : '0');
+                if (data.user_reaction === type) {
+                    $b.addClass('active');
+                }
+            });
+        },
+        error: function () {
+            showToast('Erro ao registrar reação. Tente novamente.', 'error');
+        }
+    });
 });

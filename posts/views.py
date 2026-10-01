@@ -7,41 +7,54 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.urls import reverse
-from .models import Post, Comment
-from .decorators import owner_required
-from django.db.models import Q, Count, Exists, OuterRef, Value, BooleanField
+from .models import Post, Comment, PostReaction, REACTION_CHOICES
+from SocialMedia.decorators import owner_required
+from django.db.models import Count, Q, Exists, OuterRef, Subquery, CharField
 from django.http import JsonResponse
+from django.db import IntegrityError
 
 POSTS_POR_PAGINA = 30
 CACHE_KEY_MAIS_CURTIDOS = 'posts:mais_curtidos'
 CACHE_TTL_MAIS_CURTIDOS = 300
 COMMENTS_POR_PAGINA = 10
+REACTION_TYPES = [c[0] for c in REACTION_CHOICES]
 
-def _com_likes(queryset, user):
+def _com_reacoes(queryset, user):
+    """
+    Anota a queryset de posts com contadores de cada tipo de reação
+    (like, laugh, wow, sad) e, se o usuário estiver logado, qual
+    reação ele deu nesse post (user_reaction), evitando N+1.
+    """
     queryset = queryset.annotate(
-        num_likes=Count('likes', distinct=True),
         num_comments=Count('comments', distinct=True),
+        num_like=Count('reactions', filter=Q(reactions__reaction_type='like'), distinct=True),
+        num_laugh=Count('reactions', filter=Q(reactions__reaction_type='laugh'), distinct=True),
+        num_wow=Count('reactions', filter=Q(reactions__reaction_type='wow'), distinct=True),
+        num_sad=Count('reactions', filter=Q(reactions__reaction_type='sad'), distinct=True),
     )
-    
     if user.is_authenticated:
-        likes_do_usuario = Post.likes.through.objects.filter(
+        reacao_do_usuario = PostReaction.objects.filter(
             post_id=OuterRef('pk'), user_id=user.id
+        ).values('reaction_type')[:1]
+        queryset = queryset.annotate(
+            user_reaction=Subquery(reacao_do_usuario, output_field=CharField())
         )
-        queryset = queryset.annotate(is_liked=Exists(likes_do_usuario))
-    else:
-        # Garante que is_liked sempre existe na struct, retornando False
-        queryset = queryset.annotate(is_liked=Value(False, output_field=BooleanField()))
-    
-    # Ordenação necessária para eliminar o UnorderedObjectListWarning do Paginator
     return queryset.order_by('-data_posted')
 
+
 def _get_mais_curtidos_ids():
+    """
+    Ranking do painel "Mais Curtidos" continua baseado especificamente
+    em quem deu reação tipo 'like' (mantém o significado original do
+    painel), não na soma de todas as reações.
+    """
     ids = cache.get(CACHE_KEY_MAIS_CURTIDOS)
     if ids is None:
         ids = list(
-            Post.objects.annotate(num_likes=Count('likes', distinct=True))
-            .filter(num_likes__gt=0)
-            .order_by('-num_likes')
+            Post.objects.annotate(
+                num_like=Count('reactions', filter=Q(reactions__reaction_type='like'), distinct=True)
+            )
+            .order_by('-num_like')
             .values_list('id', flat=True)[:10]
         )
         cache.set(CACHE_KEY_MAIS_CURTIDOS, ids, CACHE_TTL_MAIS_CURTIDOS)
@@ -52,7 +65,7 @@ def _get_mais_curtidos_ids():
 def following_feed(request):
     following_ids = request.user.following_relations.values_list('following_id', flat=True)
 
-    posts_list = _com_likes(
+    posts_list = _com_reacoes(
         Post.objects.filter(user_id__in=following_ids).select_related('user'), request.user
     )
 
@@ -75,7 +88,7 @@ def following_feed(request):
 
 @never_cache
 def all_posts(request):
-    posts_list = _com_likes(
+    posts_list = _com_reacoes(
         Post.objects.select_related('user'), request.user
     )
 
@@ -83,7 +96,6 @@ def all_posts(request):
     page_number = request.GET.get('page')
     posts = paginator.get_page(page_number)
 
-    # Requisição AJAX do infinite scroll: retorna só o HTML novo + metadados de paginação
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('partials/posts_feed.html', {'posts': posts, 'user': request.user}, request=request)
         return JsonResponse({
@@ -93,7 +105,7 @@ def all_posts(request):
         })
 
     ids_mais_curtidos = _get_mais_curtidos_ids()
-    posts_mais_curtidos = _com_likes(
+    posts_mais_curtidos = _com_reacoes(
         Post.objects.filter(id__in=ids_mais_curtidos).select_related('user'),
         request.user,
     )
@@ -102,20 +114,6 @@ def all_posts(request):
     )
 
     return render(request, 'all_posts.html', {'posts': posts, 'more_liked_posts': posts_mais_curtidos})
-
-@login_required(login_url='users:login')
-@require_POST
-def like_post(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
-    if request.user in post.likes.all():
-        post.likes.remove(request.user)
-        liked = False
-    else:
-        post.likes.add(request.user)
-        liked = True
-
-    cache.delete(CACHE_KEY_MAIS_CURTIDOS)
-    return JsonResponse({'liked': liked, 'like_count': post.likes.count()})
 
 def goto_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
@@ -177,7 +175,7 @@ def search_post(request):
             Q(user__username__icontains=query)
         ).distinct()
 
-    posts_list = _com_likes(posts_list, request.user)
+    posts_list = _com_reacoes(posts_list, request.user)
 
     paginator = Paginator(posts_list, POSTS_POR_PAGINA)
     page_number = request.GET.get('page')
@@ -189,7 +187,6 @@ def search_post(request):
     }
     return render(request, 'search_post.html', context)
 
-@login_required(login_url='users:login')
 def list_comments(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments_qs = post.comments.select_related('user')
@@ -258,3 +255,45 @@ def delete_comment(request, comment_id):
     comment = request.owned_object
     comment.delete()
     return JsonResponse({'success': True})
+
+@login_required(login_url='users:login')
+@require_POST
+def toggle_reaction(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    reaction_type = request.POST.get('reaction_type')
+
+    if reaction_type not in REACTION_TYPES:
+        return JsonResponse({'error': 'Tipo de reação inválido.'}, status=400)
+
+    existing = PostReaction.objects.filter(post=post, user=request.user).first()
+
+    if existing and existing.reaction_type == reaction_type:
+        existing.delete()
+        user_reaction = None
+    elif existing:
+        existing.reaction_type = reaction_type
+        existing.save()
+        user_reaction = reaction_type
+    else:
+        try:
+            PostReaction.objects.create(post=post, user=request.user, reaction_type=reaction_type)
+            user_reaction = reaction_type
+        except IntegrityError:
+            # Corrida: outra requisição criou a reação entre o filter() e o create().
+            # Em vez de falhar, atualiza a que já existe para o tipo pedido.
+            existing = PostReaction.objects.filter(post=post, user=request.user).first()
+            if existing:
+                existing.reaction_type = reaction_type
+                existing.save()
+                user_reaction = reaction_type
+            else:
+                user_reaction = None
+
+    counts = {
+        rt: post.reactions.filter(reaction_type=rt).count() for rt in REACTION_TYPES
+    }
+
+    if reaction_type == 'like' or user_reaction == 'like':
+        cache.delete(CACHE_KEY_MAIS_CURTIDOS)
+
+    return JsonResponse({'user_reaction': user_reaction, 'counts': counts})

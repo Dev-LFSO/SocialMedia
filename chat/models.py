@@ -1,30 +1,56 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.conf import settings
+import os
+
+MAX_ATTACHMENT_SIZE_MB = 50
+ALLOWED_ATTACHMENT_TYPES = [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'application/pdf', 'video/mp4', 'audio/mp3'
+]
+ALLOWED_ATTACHMENT_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.mp4', '.mp3']
+
+def validate_attachment(file):
+    max_size_bytes = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024
+    if file.size > max_size_bytes:
+        raise ValidationError(
+            f'O anexo não pode ultrapassar {MAX_ATTACHMENT_SIZE_MB}MB '
+            f'(tamanho atual: {file.size / (1024 * 1024):.1f}MB).'
+        )
+
+    content_type = getattr(file, 'content_type', None)
+    if content_type and content_type not in ALLOWED_ATTACHMENT_TYPES:
+        raise ValidationError(
+            'Formato de arquivo inválido. Envie uma imagem (JPG, PNG, WEBP, GIF) ou um PDF.'
+        )
+
+    nome = file.name.lower()
+    if not any(nome.endswith(ext) for ext in ALLOWED_ATTACHMENT_EXTENSIONS):
+        raise ValidationError(
+            'Extensão de arquivo inválida.'
+        )
+
+
+def attachment_path(instance, filename):
+    participants_names = ", ".join([u.username for u in instance.conversation.participants.all()])
+    return f"chat_attachments/conversation#{instance.conversation_id} ({participants_names})/{filename}"
 
 class ConversationManager(models.Manager):
     def get_or_create_one_to_one(self, user1, user2):
-        """
-        Busca uma conversa existente entre user1 e user2.
-        Se não existir, cria uma nova exatamente com os dois.
-        """
         if user1 == user2:
             raise ValueError("Um usuário não pode iniciar um chat consigo mesmo.")
 
-        # Busca conversas que contêm AMBOS os usuários
         conversation = self.filter(participants=user1).filter(participants=user2).first()
 
         if conversation:
-            return conversation, False  # (conversa, criada_agora=False)
+            return conversation, False
 
-        # Se não existe, cria a conversa e adiciona os dois participantes
         new_conversation = self.create()
         new_conversation.participants.add(user1, user2)
-        return new_conversation, True  # (conversa, criada_agora=True)
+        return new_conversation, True
+
 
 class Conversation(models.Model):
-    """
-    Representa o canal/thread de bate-papo entre os usuários.
-    """
     participants = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name='conversations'
@@ -38,15 +64,12 @@ class Conversation(models.Model):
         ordering = ['-updated_at']
 
     def get_other_user(self, current_user):
-        """Helper para retornar o outro participante em chats 1x1"""
         return self.participants.exclude(id=current_user.id).first()
 
     def unread_count_for(self, user):
-        """Retorna quantas mensagens não lidas o usuário tem nesta conversa"""
         return self.messages.filter(is_read=False).exclude(sender=user).count()
-    
+
     def last_message(self):
-        """Retorna a última mensagem enviada no chat"""
         return self.messages.order_by('-timestamp').first()
 
     def __str__(self):
@@ -55,9 +78,6 @@ class Conversation(models.Model):
 
 
 class Message(models.Model):
-    """
-    Representa cada mensagem enviada dentro de uma conversa.
-    """
     conversation = models.ForeignKey(
         Conversation,
         on_delete=models.CASCADE,
@@ -69,12 +89,27 @@ class Message(models.Model):
         related_name='sent_messages'
     )
     content = models.TextField(blank=True, null=True)
-    
+    attachment = models.FileField(
+        upload_to=attachment_path, blank=True, null=True,
+        validators=[validate_attachment],
+    )
+
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['timestamp']
+
+    def is_image(self):
+        if not self.attachment:
+            return False
+        return self.attachment.name.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif'))
+
+    @property
+    def attachment_filename(self):
+        if not self.attachment:
+            return ''
+        return os.path.basename(self.attachment.name)
 
     def __str__(self):
         return f'{self.sender.username}: {self.content[:30] if self.content else "Anexo"}'

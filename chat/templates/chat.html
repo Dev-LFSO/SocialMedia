@@ -98,7 +98,11 @@
                                         {% else %}
                                         {{ conversa.other_user.username }}:     
                                         {% endif %}
+                                        {% if conversa.cached_last_message.content %}
                                         {{ conversa.cached_last_message.content }}
+                                        {% else %}
+                                        Anexo
+                                        {% endif %}
                                     </p>
                                     {% else %}
                                     <p class="last-message">Nenhuma mensagem!</p>
@@ -154,12 +158,23 @@
                         {% if messages %}
                             {% for msg in messages %}
                                 {% if msg.sender == request.user %}
-                                    <!-- MENSAGEM ENVIADA PELO USUÁRIO LOGADO (LADO DIREITO) -->
-                                    <div class="message-group outgoing">
-                                        <div class="message-body">
-                                            <div class="message-bubble">
-                                                {{ msg.content|linebreaksbr }}
-                                            </div>
+                                <div class="message-group outgoing" data-message-id="{{ msg.id }}">
+                                    <div class="message-body">
+                                        <div class="message-bubble">
+                                            {% if msg.attachment %}
+                                                {% if msg.is_image %}
+                                                <a href="{{ msg.attachment.url }}" target="_blank" rel="noopener">
+                                                    <img src="{{ msg.attachment.url }}" alt="Imagem enviada" class="message-attachment-image" loading="lazy">
+                                                </a>
+                                                {% else %}
+                                                <a href="{{ msg.attachment.url }}" target="_blank" rel="noopener" class="message-attachment-file">
+                                                    <i class="fa-solid fa-file-pdf"></i> {{ msg.attachment_filename }}
+                                                </a>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if msg.content %}{{ msg.content|linebreaksbr }}{% endif %}
+                                        </div>
+                                        <div class="message-footer">
                                             <span class="message-time">
                                                 {{ msg.timestamp|date:"H:i" }}
                                                 {% if msg.is_read %}
@@ -168,27 +183,17 @@
                                                     <i class="fa-solid fa-check"></i>
                                                 {% endif %}
                                             </span>
+                                            <button type="button" class="message-delete-btn" data-url="{% url 'chat:delete_message' msg.id %}" title="Excluir mensagem">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
                                         </div>
                                     </div>
+                                </div>
                                 {% else %}
-                                    <!-- MENSAGEM RECEBIDA (LADO ESQUERDO) -->
-                                    <div class="message-group incoming">
-                                        <div class="avatar-wrapper avatar-xs" style="align-self: flex-end;">
-                                            {% if active_conversation.other_user.profile_picture %}
-                                                <img src="{{ active_conversation.other_user.profile_picture.url }}" alt="{{ active_conversation.other_user.username }}" loading="lazy" class="avatar-img">
-                                            {% else %}
-                                                <div class="profile-avatar-placeholder">
-                                                    <i class="fa-solid fa-user"></i>
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                        <div class="message-body">
-                                            <div class="message-bubble">
-                                                {{ msg.content|linebreaksbr }}
-                                            </div>
-                                            <span class="message-time">{{ msg.timestamp|date:"H:i" }}</span>
-                                        </div>
-                                    </div>
+                                <div class="message-group incoming" data-message-id="{{ msg.id }}">
+                                    ...
+                                    <!-- mensagens recebidas não têm botão de excluir -->
+                                </div>w
                                 {% endif %}
                             {% endfor %}
                         {% else %}
@@ -202,18 +207,24 @@
 
                     <!-- 3. RODAPÉ E CAMPO DE DIGITAÇÃO -->
                     <footer class="chat-footer">
-                        <form id="chatForm" class="chat-input-form" method="POST" action="{% url 'chat:send_message' conversation_id=active_conversation.id %}">
+                        <form id="chatForm" class="chat-input-form" method="POST" action="{% url 'chat:send_message' conversation_id=active_conversation.id %}" enctype="multipart/form-data">
                             {% csrf_token %}
+
+                            <button type="button" class="input-action-btn" id="attachmentBtn" title="Anexar arquivo">
+                                <i class="fa-solid fa-paperclip"></i>
+                            </button>
+                            <input type="file" id="attachmentInput" name="attachment" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,video/mp4,audio/mp3" style="display: none;">
+
                             <div class="input-wrapper">
-                                <textarea id="messageInput" name="content" placeholder="Digite uma mensagem..." rows="1" required></textarea>
+                                <div id="attachmentPreview" class="attachment-preview" style="display: none;">
+                                    <span id="attachmentPreviewName"></span>
+                                    <button type="button" id="removeAttachmentBtn" aria-label="Remover anexo"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <textarea id="messageInput" name="content" placeholder="Digite uma mensagem..." rows="1"></textarea>
                             </div>
 
-                            <button
-                                type="submit"
-                                class="chat-send-btn"
-                                aria-label="Enviar mensagem"
-                                title="Enviar mensagem">
-                                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                            <button type="submit" class="chat-send-btn" title="Enviar mensagem">
+                                <i class="fa-solid fa-paper-plane"></i>
                             </button>
                         </form>
                     </footer>
@@ -237,12 +248,41 @@
     </section>
 </main>
 <script>
-$(document).on('keydown', function (e) {
-    const $modal = $('#newChatModal');
+$(document).ready(function () {
+    var $attachmentInput = $('#attachmentInput');
+    var $attachmentPreview = $('#attachmentPreview');
+    var $attachmentPreviewName = $('#attachmentPreviewName');
+    var $messageInput = $('#messageInput');
 
-    if (e.key === 'Escape' && $modal.hasClass('active')) {
-        $modal.removeClass('active');
-        $('#openNewChatModal').focus();
+    $('#attachmentBtn').on('click', function () {
+        $attachmentInput.click();
+    });
+
+    $attachmentInput.on('change', function () {
+        var file = this.files[0];
+        if (file) {
+            $attachmentPreviewName.text(file.name);
+            $attachmentPreview.show();
+            $messageInput.removeAttr('required');
+        }
+    });
+
+    $('#removeAttachmentBtn').on('click', function () {
+        $attachmentInput.val('');
+        $attachmentPreview.hide();
+    });
+});
+$(document).on('keydown', '#messageInput', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+
+        var $form = $(this).closest('form');
+        var temTexto = $(this).val().trim() !== '';
+        var temAnexo = $('#attachmentInput')[0].files.length > 0;
+
+        if (temTexto || temAnexo) {
+            $form.submit();
+        }
     }
 });
 function renderChatSkeleton() {

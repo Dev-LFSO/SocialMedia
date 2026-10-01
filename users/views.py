@@ -5,7 +5,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q, OuterRef, Count, Exists
+from django.db.models import Q, Count, Exists, OuterRef, Subquery, CharField
 from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
@@ -14,7 +14,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import strip_tags
 from django.contrib import messages
-from posts.models import Post
+from posts.models import Post, PostReaction
 from .forms import LoginForm, ProfileUpdateForm, UserRegisterForm
 from django_ratelimit.decorators import ratelimit
 from .models import Follow
@@ -24,16 +24,21 @@ User = get_user_model()
 
 POSTS_POR_PAGINA = 10
 
-def _com_likes_e_comentarios(queryset, user):
+def _com_reacoes(queryset, user):
     queryset = queryset.annotate(
-        num_likes=Count('likes', distinct=True),
         num_comments=Count('comments', distinct=True),
+        num_like=Count('reactions', filter=Q(reactions__reaction_type='like'), distinct=True),
+        num_laugh=Count('reactions', filter=Q(reactions__reaction_type='laugh'), distinct=True),
+        num_wow=Count('reactions', filter=Q(reactions__reaction_type='wow'), distinct=True),
+        num_sad=Count('reactions', filter=Q(reactions__reaction_type='sad'), distinct=True),
     )
     if user.is_authenticated:
-        likes_do_usuario = Post.likes.through.objects.filter(
+        reacao_do_usuario = PostReaction.objects.filter(
             post_id=OuterRef('pk'), user_id=user.id
+        ).values('reaction_type')[:1]
+        queryset = queryset.annotate(
+            user_reaction=Subquery(reacao_do_usuario, output_field=CharField())
         )
-        queryset = queryset.annotate(is_liked=Exists(likes_do_usuario))
     return queryset
 
 def _enviar_email_confirmacao(request, user):
@@ -188,7 +193,7 @@ def search_user(request):
 @login_required(login_url='users:login')
 def get_user(request, username):
     user = get_object_or_404(User, username=username)
-    user_posts = _com_likes_e_comentarios(
+    user_posts = _com_reacoes(
         Post.objects.filter(user=user).select_related('user'), request.user
     )
     data = {
@@ -204,7 +209,7 @@ def get_user(request, username):
 def my_user(request):
     user = request.user
 
-    posts_list = _com_likes_e_comentarios(
+    posts_list = _com_reacoes(
         Post.objects.filter(user=user), request.user
     )
     paginator = Paginator(posts_list, POSTS_POR_PAGINA)

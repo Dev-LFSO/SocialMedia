@@ -72,28 +72,61 @@
                             <img src="{{ post.image.url }}" alt="Imagem do post: {{ post.title }}" loading="lazy" class="post-card__image" onclick="openModal(this)">
                             {% endif %}
                             <div class="post-card__actions">
-                            <div class="post-card__actions-left">
-                                {% if user.is_authenticated %}
-                                <button type="button" 
-                                        class="like-btn" 
-                                        data-url="{% url 'posts:like_post' post.id %}" 
-                                        data-post-id="{{ post.id }}"
-                                        aria-pressed="{% if post.is_liked %}true{% else %}false{% endif %}" 
-                                        aria-label="Curtir post">
-                                    <i class="fa-solid fa-heart"></i>
-                                    <span class="like-count">{{ post.num_likes }}</span>
-                                </button>
+                                <div class="post-card__actions-left">
+                                    <div class="reaction-group" data-post-id="{{ post.id }}">
+                                        <button type="button"
+                                                class="reaction-btn {% if post.user_reaction == 'like' %}active{% endif %}"
+                                                data-reaction="like"
+                                                data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                                aria-label="Curtir">
+                                            <span class="reaction-emoji">❤️</span>
+                                            <span class="reaction-count">{{ post.num_like }}</span>
+                                        </button>
+                                        <button type="button"
+                                                class="reaction-btn {% if post.user_reaction == 'laugh' %}active{% endif %}"
+                                                data-reaction="laugh"
+                                                data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                                aria-label="Reagir com risada">
+                                            <span class="reaction-emoji">😂</span>
+                                            <span class="reaction-count">{{ post.num_laugh }}</span>
+                                        </button>
+                                        <button type="button"
+                                                class="reaction-btn {% if post.user_reaction == 'wow' %}active{% endif %}"
+                                                data-reaction="wow"
+                                                data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                                aria-label="Reagir com surpresa">
+                                            <span class="reaction-emoji">😮</span>
+                                            <span class="reaction-count">{{ post.num_wow }}</span>
+                                        </button>
+                                        <button type="button"
+                                                class="reaction-btn {% if post.user_reaction == 'sad' %}active{% endif %}"
+                                                data-reaction="sad"
+                                                data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                                aria-label="Reagir com tristeza">
+                                            <span class="reaction-emoji">😢</span>
+                                            <span class="reaction-count">{{ post.num_sad }}</span>
+                                        </button>
+                                    </div>
 
-                                <button type="button"
-                                        class="comment-toggle-btn"
-                                        data-post-id="{{ post.id }}"
-                                        data-url="{% url 'posts:list_comments' post.id %}"
-                                        aria-label="Ver comentários">
-                                    <i class="fa-regular fa-comment"></i>
-                                    <span class="comment-count">{{ post.num_comments }}</span>
-                                </button>
-                                {% endif %}
+                                    <button type="button"
+                                            class="comment-toggle-btn"
+                                            data-post-id="{{ post.id }}"
+                                            data-url="{% url 'posts:list_comments' post.id %}"
+                                            aria-label="Ver comentários">
+                                        <i class="fa-regular fa-comment"></i>
+                                        <span class="comment-count">{{ post.num_comments }}</span>
+                                    </button>
+                                </div>
+
+                                <form action="{% url 'posts:delete_post' post.id %}" method="POST" style="display: inline;" class="delete-post-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-delete" title="Excluir post">
+                                        <i class="fa-solid fa-trash-can"></i> Excluir
+                                    </button>
+                                </form>
                             </div>
+
+                            <div class="comments-section" id="comments-section-{{ post.id }}"></div>
                         </div>
 
                         <div class="comments-section" id="comments-section-{{ post.id }}"></div>

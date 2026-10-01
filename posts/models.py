@@ -8,6 +8,12 @@ from django.core.files.base import ContentFile
 MAX_POST_IMAGE_SIZE_MB = 8
 ALLOWED_POST_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 ALLOWED_POST_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+REACTION_CHOICES = [
+    ('like', '❤️'),
+    ('laugh', '😂'),
+    ('wow', '😮'),
+    ('sad', '😢'),
+]
 # Importe ValidationError e suas constantes conforme o seu projeto
 
 MAX_WIDTH = 1080
@@ -93,7 +99,6 @@ class Post(models.Model):
         on_delete=models.CASCADE,
         related_name='posts'
     )
-    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_posts', blank=True)
     data_posted = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -117,3 +122,19 @@ class Comment(models.Model):
 
     def __str__(self) -> str:
         return f'{self.user.username}: {self.content[:30]}'
+
+class PostReaction(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='post_reactions'
+    )
+    reaction_type = models.CharField(max_length=10, choices=REACTION_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['post', 'user'], name='unique_post_reaction'),
+        ]
+
+    def __str__(self):
+        return f'{self.user.username} reagiu {self.get_reaction_type_display()} em {self.post.title}'

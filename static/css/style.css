@@ -2259,6 +2259,10 @@ input[type="file"]::-webkit-file-upload-button:hover {
 }
 
 .message-bubble {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: normal;
     padding: 10px 14px;
     border-radius: 16px;
     font-size: 14px;
@@ -3008,27 +3012,6 @@ footer,
 /* ==========================================================================
    20. COMENTÁRIOS
    ========================================================================== */
-.comment-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 9999px;
-    border: 1px solid #e2e8f0;
-    background-color: #ffffff;
-    color: #64748b;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.comment-toggle-btn:hover {
-    background-color: var(--brand-soft);
-    border-color: var(--brand);
-    color: var(--brand);
-}
 
 .comments-section {
     display: none;
@@ -3367,7 +3350,7 @@ color: var(--text-color);
 
 :root[data-theme="dark"] .like-btn:hover,
 :root[data-theme="dark"] .comment-toggle-btn:hover{
-    background-color: var(--surface);
+    background-color: var(--surface-2);
     color: var(--ink);
 }
 
@@ -3433,4 +3416,178 @@ color: var(--text-color);
 
 .dark-mode-toggle:active {
     transform: scale(0.94);
+}
+
+/* ==========================================================================
+   23. ANEXOS NO CHAT
+   ========================================================================== */
+.message-attachment-image {
+    max-width: 240px;
+    max-height: 240px;
+    border-radius: 12px;
+    display: block;
+    margin-bottom: 6px;
+    cursor: zoom-in;
+}
+
+.message-attachment-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: var(--bg-color);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    color: inherit;
+    margin-bottom: 6px;
+}
+
+.outgoing .message-attachment-file {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.attachment-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 12px;
+    background-color: rgba(0, 102, 204, 0.08);
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: #0066cc;
+    margin-bottom: 6px;
+}
+
+.attachment-preview button {
+    background: none;
+    border: none;
+    color: #0066cc;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+/* ==========================================================================
+   24. EXCLUIR MENSAGEM
+   ========================================================================== */
+.message-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    align-self: flex-end;
+}
+
+.message-delete-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px;
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.message-group.outgoing:hover .message-delete-btn {
+    opacity: 1;
+}
+
+.message-delete-btn:hover {
+    color: #ef4444;
+}
+
+/* ==========================================================================
+   25. REAÇÕES
+   ========================================================================== */
+.reaction-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.reaction-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 9px;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-color: transparent;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.reaction-btn:hover {
+    background-color: var(--surface-2);
+    transform: scale(1.1);
+}
+
+.reaction-btn:active {
+    transform: scale(0.95);
+}
+
+.reaction-btn.active {
+    background-color: var(--brand-soft);
+    border-color: var(--brand);
+}
+
+.reaction-count {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    min-width: 8px;
+}
+
+.reaction-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.reaction-btn,
+.comment-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 9px;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-color: transparent;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.reaction-btn:hover,
+.comment-toggle-btn:hover {
+    background-color: var(--surface-2);
+    transform: scale(1.1);
+}
+
+.reaction-btn:active,
+.comment-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.reaction-btn.active {
+    background-color: var(--brand-soft);
+    border-color: var(--brand);
+}
+
+.reaction-count,
+.comment-toggle-btn .comment-count {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    min-width: 8px;
+}
+
+.comment-toggle-btn i {
+    font-size: 15px;
+    color: var(--ink-soft);
 }

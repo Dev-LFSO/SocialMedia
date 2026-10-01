@@ -3,11 +3,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
+from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
+from SocialMedia.decorators import owner_required
 from .models import Conversation, Message
 
 User = get_user_model()
-
 
 @login_required(login_url='users:login')
 def get_chat(request, conversation_id=None):
@@ -19,12 +20,8 @@ def get_chat(request, conversation_id=None):
         )
     )
 
-    # Prepara o outro participante para a lista do sidebar (agora sem query extra,
-    # já que 'participants' foi prefetchado acima)
     for conv in conversations:
         conv.other_user = conv.get_other_user(request.user)
-        # Usa o prefetch de messages já carregado, em vez de chamar last_message()
-        # (que dispararia uma nova query)
         msgs_prefetched = list(conv.messages.all())
         conv.cached_last_message = msgs_prefetched[0] if msgs_prefetched else None
 
@@ -72,17 +69,31 @@ def send_message(request, conversation_id):
     )
 
     content = request.POST.get('content', '').strip()
+    attachment = request.FILES.get('attachment')
 
-    if not content:
+    if not content and not attachment:
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'error': 'A mensagem não pode estar vazia.'}, status=400)
         return redirect('chat:get_chat', conversation_id=conversation.id)
 
-    message = Message.objects.create(
+    message = Message(
         conversation=conversation,
         sender=request.user,
-        content=content,
+        content=content or None,
     )
+    if attachment:
+        message.attachment = attachment
+    try:
+        message.full_clean()
+    except ValidationError as e:
+        errors = e.message_dict.get('attachment', e.messages)
+        error_msg = ' '.join(errors) if isinstance(errors, list) else str(errors)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'error': error_msg}, status=400)
+        print(e)
+        return redirect('chat:get_chat', conversation_id=conversation.id)
+
+    message.save()
 
     conversation.save()
 
@@ -94,11 +105,27 @@ def send_message(request, conversation_id):
                 'content': message.content,
                 'timestamp': message.timestamp.strftime('%H:%M'),
                 'attachment_url': message.attachment.url if message.attachment else None,
+                'is_image': message.is_image(),
                 'is_read': message.is_read
             }
         })
 
     return redirect('chat:get_chat', conversation_id=conversation.id)
+
+@login_required
+@owner_required(Message, pk_url_kwarg='message_id', owner_field='sender')
+@require_POST
+def delete_message(request, message_id):
+    message = request.owned_object
+
+    # Apaga o arquivo físico do anexo, se existir, antes de excluir o registro
+    if message.attachment:
+        message.attachment.delete(save=False)
+
+    conversation_id = message.conversation_id
+    message.delete()
+
+    return JsonResponse({'success': True, 'conversation_id': conversation_id})
 
 @login_required
 @require_POST
