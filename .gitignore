@@ -6,6 +6,7 @@ db.sqlite3
 
 # === ARQUIVOS DE MÍDIA / UPLOADS ===
 media/
+staticfiles
 
 # === MIGRAÇÕES (Ajustado) ===
 # Mantém as pastas 'migrations', mas ignora os arquivos gerados (exceto __init__.py)

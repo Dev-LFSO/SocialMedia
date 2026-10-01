@@ -5,6 +5,8 @@ Django==6.1
 django-ratelimit==4.1.0
 idna==3.19
 pillow==12.3.0
+pytest==8.3.4
+pytest-django==4.9.0
 python-decouple==3.8
 requests==2.34.2
 sqlparse==0.6.0

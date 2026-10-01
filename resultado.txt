@@ -1,0 +1,47 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.3.4, pluggy-1.6.0
+django: version: 6.1, settings: SocialMedia.settings (from ini)
+rootdir: /home/luiz/VSCode/SocialMedia
+configfile: pytest.ini
+plugins: django-4.9.0
+collected 28 items
+
+posts/tests.py .......................                                   [ 82%]
+users/tests.py .....                                                     [100%]
+
+=============================== warnings summary ===============================
+venv/lib/python3.12/site-packages/pytest_django/plugin.py:357
+  /home/luiz/VSCode/SocialMedia/venv/lib/python3.12/site-packages/pytest_django/plugin.py:357: RemovedInDjango70Warning: The EMAIL_HOST_USER setting is deprecated. Migrate to MAILERS before Django 7.0.
+    dj_settings.DATABASES  # noqa: B018
+
+venv/lib/python3.12/site-packages/pytest_django/plugin.py:357
+  /home/luiz/VSCode/SocialMedia/venv/lib/python3.12/site-packages/pytest_django/plugin.py:357: RemovedInDjango70Warning: The EMAIL_HOST_PASSWORD setting is deprecated. Migrate to MAILERS before Django 7.0.
+    dj_settings.DATABASES  # noqa: B018
+
+venv/lib/python3.12/site-packages/pytest_django/plugin.py:357
+  /home/luiz/VSCode/SocialMedia/venv/lib/python3.12/site-packages/pytest_django/plugin.py:357: RemovedInDjango70Warning: The EMAIL_BACKEND setting is deprecated. Migrate to MAILERS before Django 7.0.
+    dj_settings.DATABASES  # noqa: B018
+
+venv/lib/python3.12/site-packages/pytest_django/plugin.py:357
+  /home/luiz/VSCode/SocialMedia/venv/lib/python3.12/site-packages/pytest_django/plugin.py:357: RemovedInDjango70Warning: The EMAIL_FILE_PATH setting is deprecated. Migrate to MAILERS before Django 7.0.
+    dj_settings.DATABASES  # noqa: B018
+
+venv/lib/python3.12/site-packages/pytest_django/plugin.py:357
+  /home/luiz/VSCode/SocialMedia/venv/lib/python3.12/site-packages/pytest_django/plugin.py:357: RemovedInDjango70Warning: The EMAIL_PORT setting is deprecated. Migrate to MAILERS before Django 7.0.
+    dj_settings.DATABASES  # noqa: B018
+
+venv/lib/python3.12/site-packages/pytest_django/plugin.py:357
+  /home/luiz/VSCode/SocialMedia/venv/lib/python3.12/site-packages/pytest_django/plugin.py:357: RemovedInDjango70Warning: The EMAIL_HOST setting is deprecated. Migrate to MAILERS before Django 7.0.
+    dj_settings.DATABASES  # noqa: B018
+
+venv/lib/python3.12/site-packages/pytest_django/plugin.py:357
+  /home/luiz/VSCode/SocialMedia/venv/lib/python3.12/site-packages/pytest_django/plugin.py:357: RemovedInDjango70Warning: The EMAIL_USE_TLS setting is deprecated. Migrate to MAILERS before Django 7.0.
+    dj_settings.DATABASES  # noqa: B018
+
+posts/tests.py: 21 warnings
+users/tests.py: 5 warnings
+  /home/luiz/VSCode/SocialMedia/venv/lib/python3.12/site-packages/django/core/handlers/base.py:63: UserWarning: No directory at: /home/luiz/VSCode/SocialMedia/staticfiles/
+    mw_instance = middleware(adapted_handler)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 28 passed, 33 warnings in 20.24s =======================
