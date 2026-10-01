@@ -8,11 +8,6 @@ db.sqlite3
 media/
 staticfiles
 
-# === MIGRAÇÕES (Ajustado) ===
-# Mantém as pastas 'migrations', mas ignora os arquivos gerados (exceto __init__.py)
-*/migrations/*.py
-!*/migrations/__init__.py
-
 # === CACHE DO PYTHON E IDE ===
 __pycache__/
 *.pyc
