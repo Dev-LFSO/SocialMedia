@@ -13,5 +13,3 @@ __pycache__/
 *.pyc
 .env
 .vscode/
-
-resultado.txt

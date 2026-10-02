@@ -97,10 +97,6 @@ else:
         'default': {
             'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
             'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
-            'USER': config('DB_USER', default=''),
-            'PASSWORD': config('DB_PASSWORD', default=''),
-            'HOST': config('DB_HOST', default=''),
-            'PORT': config('DB_PORT', default=''),
         }
     }
 
@@ -140,6 +136,8 @@ CSRF_TRUSTED_ORIGINS = config(
     default='https://*.onrender.com',
     cast=Csv()
 )
+
+WHITENOISE_MANIFEST_STRICT = False
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
