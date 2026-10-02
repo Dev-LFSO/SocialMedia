@@ -1,4 +1,5 @@
 import threading
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -24,6 +25,8 @@ from django.utils.html import strip_tags
 from .tokens import email_verification_token
 from .models import Follow
 
+logger = logging.getLogger(__name__)
+
 User = get_user_model()
 
 POSTS_POR_PAGINA = 10
@@ -46,22 +49,25 @@ def _com_reacoes(queryset, user):
     return queryset
 
 def _enviar_email_confirmacao(request, user):
-    user = User.objects.get(id=user.id)
-    current_site = get_current_site(request)
-    subject = 'Confirme seu e-mail - Social Media'
-    context = {
-        'user': user,
-        'domain': current_site.domain,
-        'protocol': 'https' if request.is_secure() else 'http',
-        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-        'token': email_verification_token.make_token(user),
-    }
-    html_message = render_to_string('email_verification_email_html.html', context)
-    plain_message = strip_tags(html_message)
+    try:
+        user = User.objects.get(id=user.id)
+        current_site = get_current_site(request)
+        subject = 'Confirme seu e-mail - Social Media'
+        context = {
+            'user': user,
+            'domain': current_site.domain,
+            'protocol': 'https' if request.is_secure() else 'http',
+            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'token': email_verification_token.make_token(user),
+        }
+        html_message = render_to_string('email_verification_email_html.html', context)
+        plain_message = strip_tags(html_message)
 
-    email = EmailMultiAlternatives(subject, plain_message, to=[user.email])
-    email.attach_alternative(html_message, "text/html")
-    email.send()
+        email = EmailMultiAlternatives(subject, plain_message, to=[user.email])
+        email.attach_alternative(html_message, "text/html")
+        email.send()
+    except Exception as e:
+        logger.error(f"Erro ao enviar e-mail de confirmação para {user.email}: {e}")
 
 @login_required
 @require_POST
@@ -96,7 +102,6 @@ def register(request):
                             args=(request, user)
                         ).start()
             return render(request, 'email_verification_sent.html', {'email': user.email})
-        print(form.error_messages)
         return render(request, 'register.html', {
             'form': form,
         }, status=400)
