@@ -40,10 +40,23 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django_q',
     'users',
     'posts',
     'chat'
 ]
+
+Q_CLUSTER = {
+    'name': 'meu_projeto_tasks',
+    'workers': 2,
+    'timeout': 30,
+    'retry': 60,
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',
+}
+
+EMAIL_TIMEOUT = 10
 
 SITE_ID = 1
 

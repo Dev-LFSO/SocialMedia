@@ -1,3 +1,4 @@
+import threading
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -5,18 +6,22 @@ from django.contrib.auth import login, logout, authenticate
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q, Count, Exists, OuterRef, Subquery, CharField
+from django.db.models import Q, Count, OuterRef, Subquery, CharField
 from django.contrib.auth import get_user_model
-from django.contrib.sites.shortcuts import get_current_site
-from django.template.loader import render_to_string
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
-from django.core.mail import EmailMultiAlternatives
-from django.utils.html import strip_tags
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
 from django.contrib import messages
 from posts.models import Post, PostReaction
 from .forms import LoginForm, ProfileUpdateForm, UserRegisterForm
 from django_ratelimit.decorators import ratelimit
+from django.contrib.auth import get_user_model
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.core.mail import EmailMultiAlternatives
+from django.utils.html import strip_tags
+from .tokens import email_verification_token
 from .models import Follow
 from .tokens import email_verification_token
 
@@ -42,6 +47,7 @@ def _com_reacoes(queryset, user):
     return queryset
 
 def _enviar_email_confirmacao(request, user):
+    user = User.objects.get(id=user.id)
     current_site = get_current_site(request)
     subject = 'Confirme seu e-mail - Social Media'
     context = {
@@ -86,9 +92,10 @@ def register(request):
             user = form.save(commit=False)
             user.is_active = False
             user.save()
-
-            _enviar_email_confirmacao(request, user)
-
+            threading.Thread(
+                            target=_enviar_email_confirmacao,
+                            args=(request, user)
+                        ).start()
             return render(request, 'email_verification_sent.html', {'email': user.email})
         print(form.error_messages)
         return render(request, 'register.html', {
@@ -165,9 +172,12 @@ def resend_verification_email(request):
         email = request.POST.get('email', '').strip()
         try:
             user = User.objects.get(email=email, is_active=False)
-            _enviar_email_confirmacao(request, user)
+            threading.Thread(
+                target=_enviar_email_confirmacao,
+                args=(request, user)
+            ).start()
         except User.DoesNotExist:
-            pass  # não revela se o e-mail existe ou não, por segurança
+            pass
         return render(request, 'email_verification_sent.html', {'email': email})
     return render(request, 'resend_verification.html')
 
