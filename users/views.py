@@ -23,7 +23,6 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils.html import strip_tags
 from .tokens import email_verification_token
 from .models import Follow
-from .tokens import email_verification_token
 
 User = get_user_model()
 
