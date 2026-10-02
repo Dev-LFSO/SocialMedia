@@ -155,6 +155,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # exigir que collectstatic tenha rodado antes — isso só importa em produção.
 TESTING = 'pytest' in sys.modules or 'test' in sys.argv
 
+WHITENOISE_MANIFEST_STRICT = False
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -165,9 +167,6 @@ STORAGES = {
             if TESTING
             else "whitenoise.storage.CompressedManifestStaticFilesStorage"
         ),
-        "OPTIONS": {
-            "manifest_strict": False,
-        },
     },
 }
 
