@@ -58,11 +58,11 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 
 ## 🧪 Qualidade e infraestrutura
 
-- [ ] Escrever testes automatizados (`pytest-django` ou `unittest`) pras views principais: curtir, criar post, buscar, paginação
-- [ ] Configurar CI (GitHub Actions) rodando os testes a cada push
-- [ ] Dockerizar o projeto (`Dockerfile` + `docker-compose.yml` com banco de dados)
+- [X] Escrever testes automatizados (`pytest-django` ou `unittest`) pras views principais: curtir, criar post, buscar, paginação
+- [X] Configurar CI (GitHub Actions) rodando os testes a cada push
+- [X] Dockerizar o projeto (`Dockerfile` + `docker-compose.yml` com banco de dados)
+- [ ] Terminar o email
 - [ ] Deploy em produção (Railway, Render, PythonAnywhere ou similar)
-- [ ] Trocar SQLite por PostgreSQL em produção
 - [ ] Logging estruturado de erros (ex: Sentry)
 
 ---
