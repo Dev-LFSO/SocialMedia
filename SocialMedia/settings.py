@@ -1,8 +1,15 @@
 from pathlib import Path
-from os import path
 from decouple import config, Csv
 import sys
 import dj_database_url
+import socket
+
+_old_getaddrinfo = socket.getaddrinfo
+def _new_getaddrinfo(*args, **kwargs):
+    responses = _old_getaddrinfo(*args, **kwargs)
+    return [r for r in responses if r[0] == socket.AF_INET]
+
+socket.getaddrinfo = _new_getaddrinfo
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
