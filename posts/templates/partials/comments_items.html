@@ -1,0 +1,5 @@
+{% for comment in comments %}
+    {% include "partials/comment_item.html" %}
+{% empty %}
+<p class="comments-empty">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
+{% endfor %}

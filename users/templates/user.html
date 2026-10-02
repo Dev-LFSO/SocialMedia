@@ -1,0 +1,236 @@
+{% extends "main.html" %}
+{% load static %}
+
+{% block title %}Perfil de {{ profile_user.username }} - Social Media{% endblock %}
+
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="content-wide">
+        <!-- BOTÃO VOLTAR -->
+        <div style="margin-bottom: 20px;">
+            <button type="button" onclick="window.history.back()" class="button-submit" style="border: 1px solid rgba(0,0,0,0.15); color: inherit; width: auto; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 16px; margin-top: 0;">
+                <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
+        </div>
+
+        <!-- CARD DO PERFIL -->
+        <div class="compose-card" style="max-width: 100%; margin-bottom: 24px;">
+            <!-- CABEÇALHO DO PERFIL (FOTO, NOME E BIO) -->
+            <div class="profile-header" style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 24px; margin-bottom: 20px;">
+                
+                <!-- Foto de Perfil -->
+                <div class="profile-avatar" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background-color: var(--border-color, #e0e0e0); flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                    {% if profile_user.profile_picture %}
+                        <img src="{{ profile_user.profile_picture.url }}" alt="Foto de {{ profile_user.name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        <i class="fa-solid fa-user fa-3x" style="color: var(--ink-faint, #888);"></i>
+                    {% endif %}
+                </div>
+
+                <!-- Informações Principais -->
+                <div class="profile-main-info" style="flex: 1; min-width: 200px;">
+                    <h1 class="title" style="margin: 0; font-size: 24px;">
+                        {{ profile_user.name|default:profile_user.username }}
+                    </h1>
+                    <p class="post-card__meta" style="margin: 4px 0 8px 0; font-size: 15px;">
+                        @{{ profile_user.username }}
+                    </p>
+
+                    <div class="follow-stats">
+                        <span><strong>{{ followers_count }}</strong> seguidores</span>
+                        <span><strong>{{ following_count }}</strong> seguindo</span>
+                    </div>
+
+                    {% if is_following is not None %}
+                    <button type="button"
+                            class="follow-btn"
+                            data-url="{% url 'users:toggle_follow' profile_user.username %}"
+                            data-following="{% if is_following %}true{% else %}false{% endif %}">
+                        {% if is_following %}
+                            <i class="fa-solid fa-user-check"></i> Seguindo
+                        {% else %}
+                            <i class="fa-solid fa-user-plus"></i> Seguir
+                        {% endif %}
+                    </button>
+                    {% endif %}
+
+                    {% if profile_user.bio %}
+                        <p class="post-card__content" style="margin: 12px 0 0 0;">{{ profile_user.bio|linebreaksbr }}</p>
+                    {% else %}
+                        <p style="color: var(--ink-faint); font-style: italic; margin: 12px 0 0 0;">Nenhuma biografia informada.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- INFORMAÇÕES DETALHADAS -->
+            <div class="profile-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+                
+                <!-- Email -->
+                 {% if profile_user.cpf and request.user == profile_user %}
+                <div class="detail-item" style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-envelope" style="color: var(--ink-faint, #666); font-size: 18px;"></i>
+                    <div>
+                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">E-mail</strong>
+                        <span>{{ profile_user.email }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Localização (Cidade, UF, País) -->
+                {% if profile_user.city or profile_user.state or profile_user.country %}
+                <div class="detail-item" style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-location-dot" style="color: var(--ink-faint, #666); font-size: 18px;"></i>
+                    <div>
+                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">Localização</strong>
+                        <span>
+                            {% if profile_user.city %}{{ profile_user.city }}{% endif %}{% if profile_user.state %}, {{ profile_user.state }}{% endif %}{% if profile_user.country %} - {{ profile_user.country }}{% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- CPF (Exibido com privacidade apenas para o próprio usuário logado) -->
+                {% if profile_user.cpf and request.user == profile_user %}
+                <div class="detail-item" style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-id-card" style="color: var(--ink-faint, #666); font-size: 18px;"></i>
+                    <div>
+                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">CPF</strong>
+                        <span>{{ profile_user.cpf }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Data de Cadastro -->
+                <div class="detail-item" style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-calendar-days" style="color: var(--ink-faint, #666); font-size: 18px;"></i>
+                    <div>
+                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">Membro desde</strong>
+                        <span>{{ profile_user.date_joined|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- LISTA DE POSTS DO USUÁRIO -->
+        {% if user_posts %}
+            <h2 class="introduction-posts" style="margin-bottom: 16px; font-size: 20px;">
+                <i class="fa-solid fa-newspaper"></i> Publicações de {{ profile_user.name|default:profile_user.username }}
+            </h2>
+            <section class="feed">
+                {% for post in user_posts %}
+                <article class="post-card" id="{{ post.id }}">
+                    <h2 class="post-card__title">{{ post.title }}</h2>
+                    <p class="post-card__meta">
+                        {{ post.data_posted|date:"H:i · m/d/Y" }}
+                    </p>
+                    <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
+                    {% if post.image %}
+                    <img src="{{ post.image.url }}" alt="Imagem do post: {{ post.title }}" loading="lazy" class="post-card__image" onclick="openModal(this)">
+                    {% endif %}
+                    <div class="post-card__actions">
+                        <div class="post-card__actions-left">
+                            <div class="reaction-group" data-post-id="{{ post.id }}">
+                                <button type="button"
+                                        class="reaction-btn {% if post.user_reaction == 'like' %}active{% endif %}"
+                                        data-reaction="like"
+                                        data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                        aria-label="Curtir">
+                                    <span class="reaction-emoji">❤️</span>
+                                    <span class="reaction-count">{{ post.num_like }}</span>
+                                </button>
+                                <button type="button"
+                                        class="reaction-btn {% if post.user_reaction == 'laugh' %}active{% endif %}"
+                                        data-reaction="laugh"
+                                        data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                        aria-label="Reagir com risada">
+                                    <span class="reaction-emoji">😂</span>
+                                    <span class="reaction-count">{{ post.num_laugh }}</span>
+                                </button>
+                                <button type="button"
+                                        class="reaction-btn {% if post.user_reaction == 'wow' %}active{% endif %}"
+                                        data-reaction="wow"
+                                        data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                        aria-label="Reagir com surpresa">
+                                    <span class="reaction-emoji">😮</span>
+                                    <span class="reaction-count">{{ post.num_wow }}</span>
+                                </button>
+                                <button type="button"
+                                        class="reaction-btn {% if post.user_reaction == 'sad' %}active{% endif %}"
+                                        data-reaction="sad"
+                                        data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                        aria-label="Reagir com tristeza">
+                                    <span class="reaction-emoji">😢</span>
+                                    <span class="reaction-count">{{ post.num_sad }}</span>
+                                </button>
+                            </div>
+
+                            <button type="button"
+                                    class="comment-toggle-btn"
+                                    data-post-id="{{ post.id }}"
+                                    data-url="{% url 'posts:list_comments' post.id %}"
+                                    aria-label="Ver comentários">
+                                <i class="fa-regular fa-comment"></i>
+                                <span class="comment-count">{{ post.num_comments }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="comments-section" id="comments-section-{{ post.id }}"></div>
+                </article>
+                {% endfor %}
+            </section>
+        {% endif %}
+    </section>
+    <div id="image-modal" class="image-modal" onclick="closeModal(event)">
+        <span class="close-btn">&times;</span>
+        <img class="modal-content" id="modal-img" alt="Imagem ampliada">
+    </div>
+</main>
+<script>
+// Função utilitária para capturar o cookie do CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+$(document).on('click', '.follow-btn', function () {
+    var $btn = $(this);
+    var url = $btn.data('url');
+    var isFollowing = $btn.data('following') === true || $btn.data('following') === 'true';
+
+    var csrfToken = $('[name=csrfmiddlewaretoken]').val() || getCookie('csrftoken');
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        dataType: 'json',
+        success: function (data) {
+            $btn.data('following', data.following);
+            if (data.following) {
+                $btn.html('<i class="fa-solid fa-user-check"></i> Seguindo').addClass('is-following');
+            } else {
+                $btn.html('<i class="fa-solid fa-user-plus"></i> Seguir').removeClass('is-following');
+            }
+            $btn.closest('.profile-main-info').find('.follow-stats span').first()
+                .html('<strong>' + data.followers_count + '</strong> seguidores');
+        },
+        error: function () {
+            showToast('Erro ao atualizar seguidor. Tente novamente.', 'error');
+        }
+    });
+});
+</script>
+{% endblock %}

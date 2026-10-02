@@ -1,0 +1,112 @@
+{% extends "main.html" %}
+{% load static %}
+{% block title %}Seguindo - Social Media{% endblock %}
+{% block content %}
+<main class="main--sem-trending">
+    {% include "sidebar.html" %}
+
+    <section class="feed" id="feed">
+        <h1 class="panel-title">Seguindo</h1>
+
+        {% if following_count == 0 %}
+        <div class="empty-state">
+            <i class="fa-solid fa-user-group fa-2x" style="margin-bottom: 12px; color: var(--ink-faint);"></i>
+            <p>Você ainda não segue ninguém. Visite um perfil e clique em "Seguir" para ver os posts aqui.</p>
+        </div>
+        {% else %}
+            {% include "partials/posts_feed.html" %}
+        {% endif %}
+    </section>
+
+    {% if following_count > 0 %}
+    <div id="infinite-scroll-sentinel" style="height: 1px;"></div>
+
+    <div id="infinite-scroll-skeleton" style="display: none;">
+        <div class="skeleton-post-card" style="margin-top: 16px;">
+            <div class="skeleton skeleton-line--title"></div>
+            <div class="skeleton skeleton-line--meta"></div>
+            <div class="skeleton skeleton-line skeleton-line--full"></div>
+            <div class="skeleton skeleton-line skeleton-line--80"></div>
+        </div>
+    </div>
+
+    {% if posts.paginator.num_pages > 1 %}
+    <nav class="pagination" id="numbered-pagination" aria-label="Navegação de páginas">
+        {% if posts.has_previous %}
+            <a href="?page=1" class="pagination__btn" aria-label="Primeira página"><i class="fa-solid fa-angles-left"></i></a>
+            <a href="?page={{ posts.previous_page_number }}" class="pagination__btn" aria-label="Página anterior"><i class="fa-solid fa-angle-left"></i></a>
+        {% endif %}
+
+        <span class="pagination__status">Página {{ posts.number }} de {{ posts.paginator.num_pages }}</span>
+
+        {% if posts.has_next %}
+            <a href="?page={{ posts.next_page_number }}" class="pagination__btn" aria-label="Próxima página"><i class="fa-solid fa-angle-right"></i></a>
+            <a href="?page={{ posts.paginator.num_pages }}" class="pagination__btn" aria-label="Última página"><i class="fa-solid fa-angles-right"></i></a>
+        {% endif %}
+    </nav>
+    {% endif %}
+    {% endif %}
+</main>
+<script>
+var currentPage = {{ posts.number|default:1 }};
+var hasNextPage = {% if posts.has_next %}true{% else %}false{% endif %};
+var carregandoProximaPagina = false;
+
+function carregarProximaPagina() {
+    if (!hasNextPage || carregandoProximaPagina) return;
+
+    carregandoProximaPagina = true;
+    $('#infinite-scroll-skeleton').show();
+
+    $.ajax({
+        url: window.location.pathname,
+        type: 'GET',
+        data: { page: currentPage + 1 },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function (data) {
+            $('#feed').append(data.html);
+            currentPage += 1;
+            hasNextPage = data.has_next;
+        },
+        error: function () {
+            showToast('Erro ao carregar mais posts. Tente novamente.', 'error');
+        },
+        complete: function () {
+            carregandoProximaPagina = false;
+            $('#infinite-scroll-skeleton').hide();
+        }
+    });
+}
+
+$(document).ready(function () {
+    if (hasNextPage || currentPage > 1) {
+        $('#numbered-pagination').hide();
+    }
+
+    var sentinela = document.getElementById('infinite-scroll-sentinel');
+    if (sentinela) {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) carregarProximaPagina();
+            });
+        }, { rootMargin: '200px' });
+        observer.observe(sentinela);
+    }
+});
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

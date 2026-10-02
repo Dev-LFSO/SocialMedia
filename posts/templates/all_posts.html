@@ -1,0 +1,129 @@
+{% extends "main.html" %}
+{% load static %}
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="feed" id="feed">
+        {% include "partials/posts_feed.html" %}
+    </section>
+
+    <!-- Sentinela: quando este elemento entra na viewport, carrega a próxima página -->
+    <div id="infinite-scroll-sentinel" style="height: 1px;"></div>
+
+    <!-- Skeleton exibido enquanto a próxima página carrega -->
+    <div id="infinite-scroll-skeleton" style="display: none;">
+        <div class="skeleton-post-card" style="margin-top: 16px;">
+            <div class="skeleton skeleton-line--title"></div>
+            <div class="skeleton skeleton-line--meta"></div>
+            <div class="skeleton skeleton-line skeleton-line--full"></div>
+            <div class="skeleton skeleton-line skeleton-line--80"></div>
+        </div>
+    </div>
+
+    {% if posts.paginator.num_pages > 1 %}
+    <nav class="pagination" id="numbered-pagination" aria-label="Navegação de páginas">
+        {% if posts.has_previous %}
+            <a href="?page=1" class="pagination__btn" aria-label="Primeira página"><i class="fa-solid fa-angles-left"></i></a>
+            <a href="?page={{ posts.previous_page_number }}" class="pagination__btn" aria-label="Página anterior"><i class="fa-solid fa-angle-left"></i></a>
+        {% endif %}
+
+        <span class="pagination__status">Página {{ posts.number }} de {{ posts.paginator.num_pages }}</span>
+
+        {% if posts.has_next %}
+            <a href="?page={{ posts.next_page_number }}" class="pagination__btn" aria-label="Próxima página"><i class="fa-solid fa-angle-right"></i></a>
+            <a href="?page={{ posts.paginator.num_pages }}" class="pagination__btn" aria-label="Última página"><i class="fa-solid fa-angles-right"></i></a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    <aside class="trending">
+        <h1 class="panel-title">Mais curtidos</h1>
+        <div class="trending-list">
+        {% for post in more_liked_posts %}
+        <div class="trending-item">
+            <a href="{% url 'posts:goto_post' post.id %}">{{ post.title }}</a>
+            <ul>
+                <li>{{ post.num_like }} curtidas</li>
+                <li>Publicado por <a href="{% url 'users:get_user' post.user.username %}">{{ post.user.username }}</a></li>
+                <li>{{ post.data_posted|date:"H:i  m/d/Y" }}</li>
+            </ul>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>Sem destaques ainda.</p>
+        </div>
+        {% endfor %}
+        </div>
+    </aside>
+</main>
+<script>
+
+var currentPage = {{ posts.number }};
+var hasNextPage = {% if posts.has_next %}true{% else %}false{% endif %};
+var carregandoProximaPagina = false;
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function carregarProximaPagina() {
+    if (!hasNextPage || carregandoProximaPagina) return;
+
+    carregandoProximaPagina = true;
+    $('#infinite-scroll-skeleton').show();
+
+    $.ajax({
+        url: window.location.pathname,
+        type: 'GET',
+        data: { page: currentPage + 1 },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function (data) {
+            $('#feed').append(data.html);
+            currentPage += 1;
+            hasNextPage = data.has_next;
+        },
+        error: function () {
+            showToast('Erro ao carregar mais posts. Tente novamente.', 'error');
+        },
+        complete: function () {
+            carregandoProximaPagina = false;
+            $('#infinite-scroll-skeleton').hide();
+        }
+    });
+}
+
+$(document).ready(function () {
+
+    // A paginação numerada some quando JS está ativo — o infinite scroll assume,
+    // mas o link continua funcionando normalmente pra quem acessa sem JS (progressive enhancement)
+    if (hasNextPage || currentPage > 1) {
+        $('#numbered-pagination').hide();
+    }
+
+    // Observa a sentinela: quando ela entra na tela, carrega mais posts
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                carregarProximaPagina();
+            }
+        });
+    }, { rootMargin: '200px' }); // começa a carregar um pouco antes de chegar ao fim
+
+    var sentinela = document.getElementById('infinite-scroll-sentinel');
+    if (sentinela) observer.observe(sentinela);
+});
+</script>
+{% endblock %}

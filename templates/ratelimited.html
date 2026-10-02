@@ -1,0 +1,14 @@
+{% extends "main.html" %}
+
+{% block content %}
+<main class="auth-main">
+    <div class="auth-card" style="text-align: center;">
+        <i class="fa-solid fa-hourglass-half fa-2x" style="color: var(--accent); margin-bottom: 8px;"></i>
+        <h1 class="title">Muitas tentativas</h1>
+        <p style="font-size: 14px; color: var(--ink-soft);">
+            Você fez várias tentativas em um curto período. Por segurança, aguarde um instante antes de tentar novamente.
+        </p>
+        <a href="{% url 'home' %}" class="button-ghost" style="text-decoration: none; margin-top: 8px;">Voltar para o início</a>
+    </div>
+</main>
+{% endblock %}

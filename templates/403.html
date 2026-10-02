@@ -1,0 +1,14 @@
+{% extends "main.html" %}
+
+{% block content %}
+<main class="auth-main">
+    <div class="auth-card" style="text-align: center;">
+        <i class="fa-solid fa-ban fa-2x" style="color: var(--danger); margin-bottom: 8px;"></i>
+        <h1 class="title">Acesso negado</h1>
+        <p style="font-size: 14px; color: var(--ink-soft);">
+            Você não tem permissão para acessar esta página.
+        </p>
+        <a href="{% url 'home' %}" class="button-ghost" style="text-decoration: none; margin-top: 8px;">Voltar para o início</a>
+    </div>
+</main>
+{% endblock %}

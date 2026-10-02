@@ -1,0 +1,23 @@
+{% extends "main.html" %}
+
+{% block content %}
+<main class="auth-main">
+    <div class="auth-card">
+        <h1 class="title">Reenviar confirmação</h1>
+        <p style="font-size: 14px; color: var(--ink-faint); margin-top: -8px;">
+            Digite o e-mail usado no cadastro para receber um novo link.
+        </p>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="inputs">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <button type="submit" class="button-submit">Reenviar e-mail</button>
+        </form>
+        <a href="{% url 'users:login' %}" class="link-back" style="margin-top: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Voltar para o login
+        </a>
+    </div>
+</main>
+{% endblock %}

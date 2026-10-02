@@ -1,0 +1,17 @@
+<div class="comments-scroll-wrapper"
+     data-post-id="{{ post_id }}"
+     data-current-page="{{ current_page }}"
+     data-has-previous="{{ has_previous|yesno:'true,false' }}"
+     data-load-more-url="{% url 'posts:load_more_comments' post_id %}">
+    <div class="comments-load-more-sentinel"></div>
+    <div class="comments-list">
+        {% include "partials/comments_items.html" %}
+    </div>
+</div>
+{% if user.is_authenticated %}
+<form class="comment-form" data-url="{% url 'posts:add_comment' post_id %}">
+    {% csrf_token %}
+    <input type="text" name="content" maxlength="500" placeholder="Escreva um comentário..." required>
+    <button type="submit" aria-label="Enviar comentário"><i class="fa-solid fa-paper-plane"></i></button>
+</form>
+{% endif %}

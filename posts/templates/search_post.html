@@ -1,0 +1,156 @@
+{% extends "main.html" %}
+{% load static %}
+
+{% block title %}Buscar Posts - Social Media{% endblock %}
+
+{% block content %}
+<main>
+    {% include "sidebar.html" %}
+
+    <section class="content-wide">
+        <!-- CARD DE BUSCA -->
+        <div class="compose-card" style="max-width: 100%; margin-bottom: 24px; position: sticky; top: calc(var(--header-h) + 16px); z-index: 20;">
+            <div class="compose-card__header">
+                <h1 class="title"><i class="fa-solid fa-magnifying-glass"></i> Pesquisar Publicações</h1>
+            </div>
+
+            <form method="GET" action="{% url 'posts:search_post' %}">
+                <div class="inputs" style="flex-direction: row; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input 
+                        type="text" 
+                        name="q" 
+                        value="{{ query|default:'' }}" 
+                        placeholder="Digite conteúdo, título, autor..." 
+                        style="flex: 1; min-width: 240px;">
+                    <button type="submit" class="button-submit" style="margin-top: 0; white-space: nowrap; justify-content: space-between; width: 120px;">
+                        <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- RESUMO DOS RESULTADOS -->
+        {% if query %}
+            <p class="post-card__meta" style="margin-bottom: 16px; font-size: 15px;">
+                Resultados para: <strong>"{{ query }}"</strong> 
+                {% if posts %}
+                    ({{ posts.paginator.count }} encontrado{{ posts.paginator.count|pluralize:"s" }})
+                {% endif %}
+            </p>
+        {% endif %}
+
+        <!-- FEED DE RESULTADOS DA BUSCA -->
+        <section class="feed">
+            {% for post in posts %}
+            <article class="post-card" id="{{ post.id }}">
+                <h2 class="post-card__title">{{ post.title }}</h2>
+                <p class="post-card__meta">
+                    Publicado por <a href="{% url 'users:get_user' post.user.username %}"><strong>{{ post.user.username }}</strong></a>· {{ post.data_posted|date:"H:i  d/m/Y" }}
+                </p>
+                <p class="post-card__content">{{ post.content|linebreaksbr }}</p>
+                {% if post.image %}
+                <img src="{{ post.image.url }}" alt="Imagem do post: {{ post.title }}" loading="lazy" class="post-card__image" onclick="openModal(this)">
+                {% endif %}
+                {% if user.is_authenticated %}
+                <div class="post-card__actions">
+                    <div class="post-card__actions-left">
+                        <div class="reaction-group" data-post-id="{{ post.id }}">
+                            <button type="button"
+                                    class="reaction-btn {% if post.user_reaction == 'like' %}active{% endif %}"
+                                    data-reaction="like"
+                                    data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                    aria-label="Curtir">
+                                <span class="reaction-emoji">❤️</span>
+                                <span class="reaction-count">{{ post.num_like }}</span>
+                            </button>
+                            <button type="button"
+                                    class="reaction-btn {% if post.user_reaction == 'laugh' %}active{% endif %}"
+                                    data-reaction="laugh"
+                                    data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                    aria-label="Reagir com risada">
+                                <span class="reaction-emoji">😂</span>
+                                <span class="reaction-count">{{ post.num_laugh }}</span>
+                            </button>
+                            <button type="button"
+                                    class="reaction-btn {% if post.user_reaction == 'wow' %}active{% endif %}"
+                                    data-reaction="wow"
+                                    data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                    aria-label="Reagir com surpresa">
+                                <span class="reaction-emoji">😮</span>
+                                <span class="reaction-count">{{ post.num_wow }}</span>
+                            </button>
+                            <button type="button"
+                                    class="reaction-btn {% if post.user_reaction == 'sad' %}active{% endif %}"
+                                    data-reaction="sad"
+                                    data-url="{% url 'posts:toggle_reaction' post.id %}"
+                                    aria-label="Reagir com tristeza">
+                                <span class="reaction-emoji">😢</span>
+                                <span class="reaction-count">{{ post.num_sad }}</span>
+                            </button>
+                        </div>
+
+                        <button type="button"
+                                class="comment-toggle-btn"
+                                data-post-id="{{ post.id }}"
+                                data-url="{% url 'posts:list_comments' post.id %}"
+                                aria-label="Ver comentários">
+                            <i class="fa-regular fa-comment"></i>
+                            <span class="comment-count">{{ post.num_comments }}</span>
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="comments-section" id="comments-section-{{ post.id }}"></div>
+            </article>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fa-solid fa-magnifying-glass fa-2x" style="margin-bottom: 12px; color: var(--ink-faint);"></i>
+                {% if query %}
+                    <p>Nenhum post foi encontrado para "<strong>{{ query }}</strong>". Tente buscar por outros termos.</p>
+                {% else %}
+                    <p>Digite um termo no campo acima para realizar uma pesquisa.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if posts.paginator.num_pages > 1 %}
+            <nav class="pagination" aria-label="Navegação de páginas">
+                {% if posts.has_previous %}
+                    <a href="?q={{ query|urlencode }}&page=1" class="pagination__btn" aria-label="Primeira página"><i class="fa-solid fa-angles-left"></i></a>
+                    <a href="?q={{ query|urlencode }}&page={{ posts.previous_page_number }}" class="pagination__btn" aria-label="Página anterior"><i class="fa-solid fa-angle-left"></i></a>
+                {% endif %}
+
+                <span class="pagination__status">Página {{ posts.number }} de {{ posts.paginator.num_pages }}</span>
+
+                {% if posts.has_next %}
+                    <a href="?q={{ query|urlencode }}&page={{ posts.next_page_number }}" class="pagination__btn" aria-label="Próxima página"><i class="fa-solid fa-angle-right"></i></a>
+                    <a href="?q={{ query|urlencode }}&page={{ posts.paginator.num_pages }}" class="pagination__btn" aria-label="Última página"><i class="fa-solid fa-angles-right"></i></a>
+                {% endif %}
+            </nav>
+            {% endif %}
+        </section>
+    </section>
+    <div id="image-modal" class="image-modal" onclick="closeModal(event)">
+        <span class="close-btn">&times;</span>
+        <img class="modal-content" id="modal-img" alt="Imagem ampliada">
+    </div>
+</main>
+<script>
+// Função utilitária para capturar o cookie do CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

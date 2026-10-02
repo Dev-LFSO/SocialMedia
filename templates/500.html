@@ -1,0 +1,17 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<main class="auth-main">
+    <div class="auth-card" style="text-align: center;">
+        <i class="fa-solid fa-server fa-2x" style="color: var(--danger); margin-bottom: 8px;"></i>
+        <h1 class="title">Erro interno do servidor</h1>
+        <p style="font-size: 14px; color: var(--ink-soft);">
+            Ocorreu um erro inesperado no servidor. Tente novamente mais tarde.
+        </p>
+        <a href="{% url 'home' %}" class="button-ghost" style="text-decoration: none; margin-top: 8px;">
+            Voltar para o início
+        </a>
+    </div>
+</main>
+{% endblock %}
