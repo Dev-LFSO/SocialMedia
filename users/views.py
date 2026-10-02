@@ -51,7 +51,7 @@ def _enviar_email_confirmacao(request, user):
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
         'token': email_verification_token.make_token(user),
     }
-    html_message = render_to_string('email_verification_email.html', context)
+    html_message = render_to_string('email_verification_email_html.html', context)
     plain_message = strip_tags(html_message)
 
     email = EmailMultiAlternatives(subject, plain_message, to=[user.email])
