@@ -52,8 +52,6 @@ INSTALLED_APPS = [
     'chat'
 ]
 
-EMAIL_TIMEOUT = 10
-
 SITE_ID = 1
 
 MIDDLEWARE = [
