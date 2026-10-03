@@ -20,12 +20,13 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.core.mail import EmailMultiAlternatives
-from django.utils.html import strip_tags
 from .tokens import email_verification_token
 from .models import Follow
+import resend
+from decouple import config
 
 logger = logging.getLogger(__name__)
+resend.api_key = config('RESEND_API_KEY', default='')
 
 User = get_user_model()
 
@@ -52,7 +53,6 @@ def _enviar_email_confirmacao(request, user):
     try:
         user = User.objects.get(id=user.id)
         current_site = get_current_site(request)
-        subject = 'Confirme seu e-mail - Social Media'
         context = {
             'user': user,
             'domain': current_site.domain,
@@ -60,12 +60,13 @@ def _enviar_email_confirmacao(request, user):
             'uid': urlsafe_base64_encode(force_bytes(user.pk)),
             'token': email_verification_token.make_token(user),
         }
-        html_message = render_to_string('email_verification_email_html.html', context)
-        plain_message = strip_tags(html_message)
-
-        email = EmailMultiAlternatives(subject, plain_message, to=[user.email])
-        email.attach_alternative(html_message, "text/html")
-        email.send()
+        params = {
+            "from": "Social Media <onboarding@resend.dev>",
+            "to": [user.email],
+            "subject": 'Confirme seu e-mail - Social Media',
+            "html": render_to_string('email_verification_email_html.html', context),
+        }
+        email = resend.Emails.send(params)
     except Exception as e:
         logger.error(f"Erro ao enviar e-mail de confirmação para {user.email}: {e}")
 
