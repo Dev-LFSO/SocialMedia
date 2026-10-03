@@ -106,7 +106,7 @@ SocialMedia/
 ├── requirements.txt
 ├── pytest.ini
 ├── build.sh            # Build para deploy
-└── TODO.m              # Lista de melhorias 
+└── TODO.md              # Lista de melhorias 
 ```
 
 ---
