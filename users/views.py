@@ -32,7 +32,7 @@ User = get_user_model()
 
 POSTS_POR_PAGINA = 10
 
-def _com_reacoes(queryset, user):
+def com_reacoes(queryset, user):
     queryset = queryset.annotate(
         num_comments=Count('comments', distinct=True),
         num_like=Count('reactions', filter=Q(reactions__reaction_type='like'), distinct=True),
@@ -49,14 +49,15 @@ def _com_reacoes(queryset, user):
         )
     return queryset
 
-def _enviar_email_confirmacao(request, user):
+def enviar_email_confirmacao(request, user):
     try:
         user = User.objects.get(id=user.id)
-        current_site = get_current_site(request)
+        domain = request.get_host()
+        protocol = 'https' if request.is_secure() else 'http'
         context = {
             'user': user,
-            'domain': current_site.domain,
-            'protocol': 'https' if request.is_secure() else 'http',
+            'domain': domain,
+            'protocol': protocol,
             'uid': urlsafe_base64_encode(force_bytes(user.pk)),
             'token': email_verification_token.make_token(user),
         }
@@ -99,7 +100,7 @@ def register(request):
             user.is_active = False
             user.save()
             threading.Thread(
-                            target=_enviar_email_confirmacao,
+                            target=enviar_email_confirmacao,
                             args=(request, user)
                         ).start()
             return render(request, 'email_verification_sent.html', {'email': user.email})
@@ -178,7 +179,7 @@ def resend_verification_email(request):
         try:
             user = User.objects.get(email=email, is_active=False)
             threading.Thread(
-                target=_enviar_email_confirmacao,
+                target=enviar_email_confirmacao,
                 args=(request, user)
             ).start()
         except User.DoesNotExist:
@@ -208,7 +209,7 @@ def search_user(request):
 @login_required(login_url='users:login')
 def get_user(request, username):
     user = get_object_or_404(User, username=username)
-    user_posts = _com_reacoes(
+    user_posts = com_reacoes(
         Post.objects.filter(user=user).select_related('user'), request.user
     )
     data = {
@@ -224,7 +225,7 @@ def get_user(request, username):
 def my_user(request):
     user = request.user
 
-    posts_list = _com_reacoes(
+    posts_list = com_reacoes(
         Post.objects.filter(user=user), request.user
     )
     paginator = Paginator(posts_list, POSTS_POR_PAGINA)

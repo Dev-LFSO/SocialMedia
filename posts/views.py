@@ -19,7 +19,7 @@ CACHE_TTL_MAIS_CURTIDOS = 300
 COMMENTS_POR_PAGINA = 10
 REACTION_TYPES = [c[0] for c in REACTION_CHOICES]
 
-def _com_reacoes(queryset, user):
+def com_reacoes(queryset, user):
     """
     Anota a queryset de posts com contadores de cada tipo de reação
     (like, laugh, wow, sad) e, se o usuário estiver logado, qual
@@ -42,7 +42,7 @@ def _com_reacoes(queryset, user):
     return queryset.order_by('-data_posted')
 
 
-def _get_mais_curtidos_ids():
+def get_mais_curtidos_ids():
     """
     Ranking do painel "Mais Curtidos" continua baseado especificamente
     em quem deu reação tipo 'like' (mantém o significado original do
@@ -65,7 +65,7 @@ def _get_mais_curtidos_ids():
 def following_feed(request):
     following_ids = request.user.following_relations.values_list('following_id', flat=True)
 
-    posts_list = _com_reacoes(
+    posts_list = com_reacoes(
         Post.objects.filter(user_id__in=following_ids).select_related('user'), request.user
     )
 
@@ -88,7 +88,7 @@ def following_feed(request):
 
 @never_cache
 def all_posts(request):
-    posts_list = _com_reacoes(
+    posts_list = com_reacoes(
         Post.objects.select_related('user'), request.user
     )
 
@@ -104,8 +104,8 @@ def all_posts(request):
             'next_page_number': posts.next_page_number() if posts.has_next() else None,
         })
 
-    ids_mais_curtidos = _get_mais_curtidos_ids()
-    posts_mais_curtidos = _com_reacoes(
+    ids_mais_curtidos = get_mais_curtidos_ids()
+    posts_mais_curtidos = com_reacoes(
         Post.objects.filter(id__in=ids_mais_curtidos).select_related('user'),
         request.user,
     )
@@ -175,7 +175,7 @@ def search_post(request):
             Q(user__username__icontains=query)
         ).distinct()
 
-    posts_list = _com_reacoes(posts_list, request.user)
+    posts_list = com_reacoes(posts_list, request.user)
 
     paginator = Paginator(posts_list, POSTS_POR_PAGINA)
     page_number = request.GET.get('page')
