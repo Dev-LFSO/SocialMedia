@@ -27,7 +27,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 if DEBUG:
     SITE_URL = 'http://127.0.0.1:8000'
 else:
-    SITE_URL = 'https://seu-app-nome.onrender.com'
+    SITE_URL = 'https://socialmedia-app-b5lv.onrender.com/'
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -59,7 +59,7 @@ INSTALLED_APPS = [
     'chat'
 ]
 
-SITE_ID = 1
+SITE_ID = 2
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
