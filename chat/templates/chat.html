@@ -191,9 +191,36 @@
                                 </div>
                                 {% else %}
                                 <div class="message-group incoming" data-message-id="{{ msg.id }}">
-                                    ...
-                                    <!-- mensagens recebidas não têm botão de excluir -->
-                                </div>w
+                                    .<div class="message-body">
+                                        <div class="message-bubble">
+                                            {% if msg.attachment %}
+                                                {% if msg.is_image %}
+                                                <a href="{{ msg.attachment.url }}" target="_blank" rel="noopener">
+                                                    <img src="{{ msg.attachment.url }}" alt="Imagem enviada" class="message-attachment-image" loading="lazy">
+                                                </a>
+                                                {% else %}
+                                                <a href="{{ msg.attachment.url }}" target="_blank" rel="noopener" class="message-attachment-file">
+                                                    <i class="fa-solid fa-file-pdf"></i> {{ msg.attachment_filename }}
+                                                </a>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if msg.content %}{{ msg.content|linebreaksbr }}{% endif %}
+                                        </div>
+                                        <div class="message-footer">
+                                            <span class="message-time">
+                                                {{ msg.timestamp|date:"H:i" }}
+                                                {% if msg.is_read %}
+                                                    <i class="fa-solid fa-check-double read-status"></i>
+                                                {% else %}
+                                                    <i class="fa-solid fa-check"></i>
+                                                {% endif %}
+                                            </span>
+                                            <button type="button" class="message-delete-btn" data-url="{% url 'chat:delete_message' msg.id %}" title="Excluir mensagem">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                                 {% endif %}
                             {% endfor %}
                         {% else %}
