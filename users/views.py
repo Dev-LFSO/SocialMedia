@@ -22,6 +22,8 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from .tokens import email_verification_token
 from .models import Follow
+import requests
+import logging
 import resend
 from decouple import config
 
@@ -54,6 +56,7 @@ def enviar_email_confirmacao(request, user):
         user = User.objects.get(id=user.id)
         domain = request.get_host()
         protocol = 'https' if request.is_secure() else 'http'
+
         context = {
             'user': user,
             'domain': domain,
@@ -61,13 +64,39 @@ def enviar_email_confirmacao(request, user):
             'uid': urlsafe_base64_encode(force_bytes(user.pk)),
             'token': email_verification_token.make_token(user),
         }
-        params = {
-            "from": "Social Media <onboarding@resend.dev>",
-            "to": [user.email],
-            "subject": 'Confirme seu e-mail - Social Media',
-            "html": render_to_string('email_verification_email_html.html', context),
+
+        html_content = render_to_string('email_verification_email_html.html', context)
+        api_key = config("BREVO_API_KEY")
+
+        if not api_key:
+            logger.error("BREVO_API_KEY não foi configurada nas variáveis de ambiente.")
+            return
+
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "api-key": api_key,
+            "content-type": "application/json"
         }
-        email = resend.Emails.send(params)
+        payload = {
+            "sender": {
+                "name": "Social Media",
+                "email": config("DEFAULT_FROM_EMAIL", default="sacsociallmedia@gmail.com")
+            },
+            "to": [
+                {"email": user.email}
+            ],
+            "subject": "Confirme seu e-mail - Social Media",
+            "htmlContent": html_content
+        }
+
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+
+        if response.status_code in (200, 201):
+            logger.info(f"E-mail enviado com sucesso para {user.email}")
+        else:
+            logger.error(f"Erro ao enviar e-mail via Brevo ({response.status_code}): {response.text}")
+
     except Exception as e:
         logger.error(f"Erro ao enviar e-mail de confirmação para {user.email}: {e}")
 
