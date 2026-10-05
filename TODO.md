@@ -6,8 +6,8 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 
 ---- NOVAS FUNCIONALIDADES ----
 
-- [] **Sistema de Notificação**
+- **Sistema de Notificação**
 
 ---- CORREÇÃO DE BUGS ----
-
+- **Erro ao enviar anexo nas conversas**
 ---
