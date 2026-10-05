@@ -35,21 +35,24 @@ User = get_user_model()
 POSTS_POR_PAGINA = 10
 
 def com_reacoes(queryset, user):
-    queryset = queryset.annotate(
-        num_comments=Count('comments', distinct=True),
-        num_like=Count('reactions', filter=Q(reactions__reaction_type='like'), distinct=True),
-        num_laugh=Count('reactions', filter=Q(reactions__reaction_type='laugh'), distinct=True),
-        num_wow=Count('reactions', filter=Q(reactions__reaction_type='wow'), distinct=True),
-        num_sad=Count('reactions', filter=Q(reactions__reaction_type='sad'), distinct=True),
-    )
-    if user.is_authenticated:
-        reacao_do_usuario = PostReaction.objects.filter(
-            post_id=OuterRef('pk'), user_id=user.id
-        ).values('reaction_type')[:1]
+    try:
         queryset = queryset.annotate(
-            user_reaction=Subquery(reacao_do_usuario, output_field=CharField())
+            num_comments=Count('comments', distinct=True),
+            num_like=Count('reactions', filter=Q(reactions__reaction_type='like'), distinct=True),
+            num_laugh=Count('reactions', filter=Q(reactions__reaction_type='laugh'), distinct=True),
+            num_wow=Count('reactions', filter=Q(reactions__reaction_type='wow'), distinct=True),
+            num_sad=Count('reactions', filter=Q(reactions__reaction_type='sad'), distinct=True),
         )
-    return queryset
+        if user.is_authenticated:
+            reacao_do_usuario = PostReaction.objects.filter(
+                post_id=OuterRef('pk'), user_id=user.id
+            ).values('reaction_type')[:1]
+            queryset = queryset.annotate(
+                user_reaction=Subquery(reacao_do_usuario, output_field=CharField())
+            )
+        return queryset
+    except Exception as e:
+        logger.error(f"Erro ao reagir post: {e}")
 
 def enviar_email_confirmacao(request, user):
     try:
@@ -122,62 +125,68 @@ def toggle_follow(request, username):
 
 @ratelimit(key='ip', rate='5/m', method='POST', block=True)
 def register(request):
-    if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.is_active = False
-            user.save()
-            threading.Thread(
-                            target=enviar_email_confirmacao,
-                            args=(request, user)
-                        ).start()
-            return render(request, 'email_verification_sent.html', {'email': user.email})
-        return render(request, 'register.html', {
-            'form': form,
-        }, status=400)
-    else:
-        form = UserRegisterForm()
-        return render(request, 'register.html', {'form': form})
+    try: 
+        if request.method == 'POST':
+            form = UserRegisterForm(request.POST)
+            if form.is_valid():
+                user = form.save(commit=False)
+                user.is_active = False
+                user.save()
+                threading.Thread(
+                                target=enviar_email_confirmacao,
+                                args=(request, user)
+                            ).start()
+                return render(request, 'email_verification_sent.html', {'email': user.email})
+            return render(request, 'register.html', {
+                'form': form,
+            }, status=400)
+        else:
+            form = UserRegisterForm()
+            return render(request, 'register.html', {'form': form})
+    except Exception as e:
+        logger.error(f"Erro ao registrar: {e}")
 
 @ratelimit(key='ip', rate='10/m', method='POST', block=True)
 @ratelimit(key="ip", rate="10/m", method="POST", block=True)
 def login_view(request):
-    if request.user.is_authenticated:
-        return redirect(request.GET.get("next") or "home")
-
-    form = LoginForm(request.POST or None)
-    show_resend = False
-
-    if request.method == "POST" and form.is_valid():
-        email = form.cleaned_data["email"]
-        password = form.cleaned_data["password"]
-        user = authenticate(request, email=email, password=password)
-
-        if user is not None:
-            login(request, user)
+    try:
+        if request.user.is_authenticated:
             return redirect(request.GET.get("next") or "home")
 
-        if User.objects.filter(email=email, is_active=False).exists():
-            form.add_error(
-                None,
-                "Sua conta ainda não foi confirmada. Verifique seu e-mail ou solicite um novo link.",
-            )
-            show_resend = True
-        else:
-            form.add_error(
-                None,
-                "E-mail ou senha incorretos. Confira os dados e tente novamente.",
-            )
+        form = LoginForm(request.POST or None)
+        show_resend = False
 
-    return render(
-        request,
-        "login.html",
-        {
-            "form": form,
-            "show_resend": show_resend,
-        },
-    )
+        if request.method == "POST" and form.is_valid():
+            email = form.cleaned_data["email"]
+            password = form.cleaned_data["password"]
+            user = authenticate(request, email=email, password=password)
+
+            if user is not None:
+                login(request, user)
+                return redirect(request.GET.get("next") or "home")
+
+            if User.objects.filter(email=email, is_active=False).exists():
+                form.add_error(
+                    None,
+                    "Sua conta ainda não foi confirmada. Verifique seu e-mail ou solicite um novo link.",
+                )
+                show_resend = True
+            else:
+                form.add_error(
+                    None,
+                    "E-mail ou senha incorretos. Confira os dados e tente novamente.",
+                )
+
+        return render(
+            request,
+            "login.html",
+            {
+                "form": form,
+                "show_resend": show_resend,
+            },
+        )
+    except Exception as e:
+        logger.error(f"Erro ao logar: {e}")
 
 def logout_view(request):
     logout(request)
@@ -187,34 +196,40 @@ def logout_view(request):
 
 def verify_email(request, uidb64, token):
     try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
 
-    if user is not None and email_verification_token.check_token(user, token):
-        user.is_active = True
-        user.save()
-        login(request, user)
-        messages.success(request, 'E-mail confirmado com sucesso! Bem-vindo(a).')
-        return redirect('home')
+        if user is not None and email_verification_token.check_token(user, token):
+            user.is_active = True
+            user.save()
+            login(request, user)
+            messages.success(request, 'E-mail confirmado com sucesso! Bem-vindo(a).')
+            return redirect('home')
 
-    return render(request, 'email_verification_invalid.html')
+        return render(request, 'email_verification_invalid.html')
+    except Exception as e:
+        logger.error(f"Erro ao verificar email: {e}")
 
 @ratelimit(key='ip', rate='3/m', method='POST', block=True)
 def resend_verification_email(request):
-    if request.method == 'POST':
-        email = request.POST.get('email', '').strip()
-        try:
-            user = User.objects.get(email=email, is_active=False)
-            threading.Thread(
-                target=enviar_email_confirmacao,
-                args=(request, user)
-            ).start()
-        except User.DoesNotExist:
-            pass
-        return render(request, 'email_verification_sent.html', {'email': email})
-    return render(request, 'resend_verification.html')
+    try:
+        if request.method == 'POST':
+            email = request.POST.get('email', '').strip()
+            try:
+                user = User.objects.get(email=email, is_active=False)
+                threading.Thread(
+                    target=enviar_email_confirmacao,
+                    args=(request, user)
+                ).start()
+            except User.DoesNotExist:
+                pass
+            return render(request, 'email_verification_sent.html', {'email': email})
+        return render(request, 'resend_verification.html')
+    except Exception as e:
+        logger.error(f"Erro ao reenviar email: {e}")
 
 def search_user(request):
     query = request.GET.get('q', '').strip()
@@ -237,46 +252,52 @@ def search_user(request):
 @never_cache
 @login_required(login_url='users:login')
 def get_user(request, username):
-    user = get_object_or_404(User, username=username)
-    user_posts = com_reacoes(
-        Post.objects.filter(user=user).select_related('user'), request.user
-    )
-    data = {
-        'profile_user': user,
-        'user_posts': user_posts,
-        'is_following': request.user.is_following(user) if request.user != user else None,
-        'followers_count': user.follower_relations.count(),
-        'following_count': user.following_relations.count(),
-    }
-    return render(request, 'user.html', data)
+    try:
+        user = get_object_or_404(User, username=username)
+        user_posts = com_reacoes(
+            Post.objects.filter(user=user).select_related('user'), request.user
+        )
+        data = {
+            'profile_user': user,
+            'user_posts': user_posts,
+            'is_following': request.user.is_following(user) if request.user != user else None,
+            'followers_count': user.follower_relations.count(),
+            'following_count': user.following_relations.count(),
+        }
+        return render(request, 'user.html', data)
+    except Exception as e:
+        logger.error(f"Erro ao acessar usuário: {e}")
 
 @login_required(login_url='users:login')
 def my_user(request):
-    user = request.user
+    try:
+        user = request.user
 
-    posts_list = com_reacoes(
-        Post.objects.filter(user=user), request.user
-    )
-    paginator = Paginator(posts_list, POSTS_POR_PAGINA)
-    page_number = request.GET.get('page')
-    posts = paginator.get_page(page_number)
+        posts_list = com_reacoes(
+            Post.objects.filter(user=user), request.user
+        )
+        paginator = Paginator(posts_list, POSTS_POR_PAGINA)
+        page_number = request.GET.get('page')
+        posts = paginator.get_page(page_number)
 
-    if request.method == 'POST':
-        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('users:my_user')
-    else:
-        form = ProfileUpdateForm(instance=request.user)
+        if request.method == 'POST':
+            form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
+            if form.is_valid():
+                form.save()
+                return redirect('users:my_user')
+        else:
+            form = ProfileUpdateForm(instance=request.user)
 
-    data = {
-        'form': form,
-        'user': user,
-        'posts': posts,
-        'followers_count': user.follower_relations.count(),
-        'following_count': user.following_relations.count(),
-    }
-    return render(request, 'my_user.html', data)
+        data = {
+            'form': form,
+            'user': user,
+            'posts': posts,
+            'followers_count': user.follower_relations.count(),
+            'following_count': user.following_relations.count(),
+        }
+        return render(request, 'my_user.html', data)
+    except Exception as e:
+        logger.error(f"Erro ao pegar meu usuário: {e}")
 
 @login_required
 @require_POST

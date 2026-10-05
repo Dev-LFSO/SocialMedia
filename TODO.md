@@ -10,7 +10,4 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 
 ---- CORREÇÃO DE BUGS ----
 
-- [] **Imagem dos posts nao está carregando (Provavelmente pasta media não existe)**
-- [] **Sistema de Esqueceu Senha com Defeito ()**
-
 ---

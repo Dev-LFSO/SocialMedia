@@ -18,6 +18,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import login_view, logout_view, register, my_user, get_user, search_user, remove_profile_picture, remove_profile_picture, verify_email, resend_verification_email, toggle_follow
 from django_ratelimit.decorators import ratelimit
+from users.forms import CustomPasswordResetForm
 
 app_name = 'users'
 
@@ -27,6 +28,7 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('password_reset/', ratelimit(key='ip', rate='3/m', method='POST', block=True)(
         auth_views.PasswordResetView.as_view(
+            form_class=CustomPasswordResetForm,
             template_name='password_reset_form.html',
             email_template_name='password_reset_email.html',
             html_email_template_name='password_reset_email_html.html',

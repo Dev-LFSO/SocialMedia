@@ -2,14 +2,6 @@ from pathlib import Path
 from decouple import config, Csv
 import sys
 import dj_database_url
-import socket
-
-_old_getaddrinfo = socket.getaddrinfo
-def _new_getaddrinfo(*args, **kwargs):
-    responses = _old_getaddrinfo(*args, **kwargs)
-    return [r for r in responses if r[0] == socket.AF_INET]
-
-socket.getaddrinfo = _new_getaddrinfo
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,12 +46,23 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'cloudinary_storage',
+    'cloudinary',
     'users',
     'posts',
     'chat'
 ]
 
-SITE_ID = 2
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+}
+
+if DEBUG:
+    SITE_ID = 1
+else:
+    SITE_ID = 2
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -173,7 +176,7 @@ WHITENOISE_MANIFEST_STRICT = False
 
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
     },
     "staticfiles": {
         "BACKEND": (
