@@ -8,6 +8,7 @@ from django.db.models import Prefetch
 from SocialMedia.decorators import owner_required
 from .models import Conversation, Message
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,7 @@ def send_message(request, conversation_id):
         )
         if attachment:
             message.attachment = attachment
+            message.original_filename = attachment.name
         try:
             message.full_clean()
         except ValidationError as e:
@@ -115,6 +117,7 @@ def send_message(request, conversation_id):
                     'content': message.content,
                     'timestamp': message.timestamp.strftime('%H:%M'),
                     'attachment_url': message.attachment.url if message.attachment else None,
+                    'attachment_name': message.original_filename or "Arquivo",
                     'is_image': message.is_image(),
                     'is_read': message.is_read
                 }

@@ -168,7 +168,7 @@
                                                 </a>
                                                 {% else %}
                                                 <a href="{{ msg.attachment.url }}" target="_blank" rel="noopener" class="message-attachment-file">
-                                                    <i class="fa-solid fa-file-pdf"></i> {{ msg.attachment_filename }}
+                                                    <i class="fa-solid fa-file-pdf"></i> {{ msg.original_filename }}
                                                 </a>
                                                 {% endif %}
                                             {% endif %}
@@ -200,7 +200,7 @@
                                                 </a>
                                                 {% else %}
                                                 <a href="{{ msg.attachment.url }}" target="_blank" rel="noopener" class="message-attachment-file">
-                                                    <i class="fa-solid fa-file-pdf"></i> {{ msg.attachment_filename }}
+                                                    <i class="fa-solid fa-file-pdf"></i> {{ msg.original_filename }}
                                                 </a>
                                                 {% endif %}
                                             {% endif %}

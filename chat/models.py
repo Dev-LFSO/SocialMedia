@@ -2,6 +2,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.conf import settings
 import os
+import uuid
+from django.utils.text import slugify
 
 MAX_ATTACHMENT_SIZE_MB = 50
 ALLOWED_ATTACHMENT_TYPES = [
@@ -30,10 +32,12 @@ def validate_attachment(file):
             'Extensão de arquivo inválida.'
         )
 
-
 def attachment_path(instance, filename):
-    participants_names = ", ".join([u.username for u in instance.conversation.participants.all()])
-    return f"chat_attachments/conversation#{instance.conversation_id} ({participants_names})/{filename}"
+    name, ext = os.path.splitext(filename)
+    safe_name = slugify(name) or 'file'
+    unique_id = uuid.uuid4().hex[:8]
+    clean_filename = f"{safe_name}_{unique_id}{ext.lower()}"
+    return f"chat_attachments/conversation_{instance.conversation_id}/{clean_filename}"
 
 class ConversationManager(models.Manager):
     def get_or_create_one_to_one(self, user1, user2):
@@ -93,7 +97,7 @@ class Message(models.Model):
         upload_to=attachment_path, blank=True, null=True,
         validators=[validate_attachment],
     )
-
+    original_filename = models.CharField(max_length=255, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 

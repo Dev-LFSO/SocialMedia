@@ -9,5 +9,5 @@ Lista de melhorias e novas funcionalidades pra evoluir o projeto, organizada por
 - **Sistema de Notificação**
 
 ---- CORREÇÃO DE BUGS ----
-- **Erro ao enviar anexo nas conversas**
+
 ---
