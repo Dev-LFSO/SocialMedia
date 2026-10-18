@@ -174,28 +174,18 @@ TESTING = 'pytest' in sys.modules or 'test' in sys.argv
 
 WHITENOISE_MANIFEST_STRICT = False
 
-if TESTING:
-    STORAGES = {
-            "default": {
-                "BACKEND": "django.core.files.storage.FileSystemStorage",
-            },
-            "staticfiles": {
-                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-            },
-        }
-else:
-    STORAGES = {
-        "default": {
-            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
-        },
-        "staticfiles": {
-            "BACKEND": (
-                "django.contrib.staticfiles.storage.StaticFilesStorage"
-                if TESTING
-                else "whitenoise.storage.CompressedManifestStaticFilesStorage"
-            ),
-        },
-    }
+STORAGES = {
+    "default": {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if TESTING
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        ),
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
